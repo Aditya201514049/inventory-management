@@ -19,6 +19,7 @@ model User {
   items        Item[]       @relation("UserItems")
   comments     Comment[]
   likes        Like[]
+  accesses     Access[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 }
