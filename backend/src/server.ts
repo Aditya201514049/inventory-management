@@ -10,7 +10,7 @@ import authRouter from './routes/auth';
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use('/auth', authRouter);
+
 
 // Session middleware (required for Passport)
 app.use(session({
@@ -23,6 +23,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // API routes
+app.use('/auth', authRouter);
 app.use('/api/inventories', inventoryRouter);
 // app.use('/api/users', userRouter); // Add more as needed
 
@@ -34,6 +35,14 @@ app.get('/api/health', (req, res) => {
 app.get('/api/protected', (req, res) => {
   if ((req as any).isAuthenticated && (req as any).isAuthenticated()) {
     res.json({ message: 'You are authenticated!' });
+  } else {
+    res.status(401).json({ message: 'Unauthorized' });
+  }
+});
+
+app.get('/profile', (req, res) => {
+  if ((req as any).isAuthenticated && (req as any).isAuthenticated()) {
+    res.json({ user: req.user });
   } else {
     res.status(401).json({ message: 'Unauthorized' });
   }
