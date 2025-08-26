@@ -4,11 +4,13 @@ import session from 'express-session';
 import passport from 'passport';
 import './config/passport'; // Ensure passport strategies are loaded
 import inventoryRouter from './routes/inventory';
+import authRouter from './routes/auth';
 // import userRouter from './routes/user'; // Add as you create more routers
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use('/auth', authRouter);
 
 // Session middleware (required for Passport)
 app.use(session({
