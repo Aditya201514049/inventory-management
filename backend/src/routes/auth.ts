@@ -13,15 +13,16 @@ router.get("/google/callback",
   }
 );
 
-// Facebook login
-router.get("/facebook", passport.authenticate("facebook", { scope: ["email"] }));
+// GitHub login
+router.get("/github", passport.authenticate("github", { scope: ["user:email"] }));
 
-router.get("/facebook/callback",
-  passport.authenticate("facebook", { failureRedirect: "/login" }),
+router.get("/github/callback",
+  passport.authenticate("github", { failureRedirect: "/login" }),
   (req, res) => {
     res.redirect("/profile");
   }
 );
+
 
 // Logout
 router.get("/logout", (req, res, next) => {
