@@ -5,6 +5,8 @@ import passport from 'passport';
 import './config/passport'; // Ensure passport strategies are loaded
 import inventoryRouter from './routes/inventory';
 import authRouter from './routes/auth';
+import accessRouter from './routes/access';
+import adminRouter from './routes/admin';
 // import userRouter from './routes/user'; // Add as you create more routers
 
 const app = express();
@@ -25,6 +27,8 @@ app.use(passport.session());
 // API routes
 app.use('/auth', authRouter);
 app.use('/api/inventories', inventoryRouter);
+app.use('/api/access', accessRouter);
+app.use('/api/admin', adminRouter);
 // app.use('/api/users', userRouter); // Add more as needed
 
 app.get('/api/health', (req, res) => {

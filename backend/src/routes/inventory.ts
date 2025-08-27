@@ -1,13 +1,419 @@
 import { Router } from 'express';
 import prisma from '../prisma';
+import { ensureAuth } from '../middleware/ensureAuth';
+import { z } from 'zod';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
-  const inventories = await prisma.inventory.findMany({
-    include: { owner: true, category: true }
-  });
-  res.json(inventories);
+const CustomIdType = z.enum([
+  'FIXED',
+  'RANDOM20',
+  'RANDOM32',
+  'RANDOM6',
+  'RANDOM9',
+  'GUID',
+  'DATE',
+  'SEQUENCE',
+]);
+
+const customIdPartSchema = z.object({
+  type: CustomIdType,
+  format: z.string().optional().nullable(),
+  order: z.number().int().nonnegative(),
 });
+
+const createInventorySchema = z.object({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  categoryId: z.string().uuid().optional().nullable(),
+  imageUrl: z.string().url().optional(),
+  tags: z.array(z.string()).optional().default([]),
+  isPublic: z.boolean().optional().default(false),
+  customIdParts: z.array(customIdPartSchema).optional().default([]),
+});
+
+const updateInventorySchema = z.object({
+  title: z.string().min(1).optional(),
+  description: z.string().optional(),
+  categoryId: z.string().uuid().optional().nullable(),
+  imageUrl: z.string().url().optional().nullable(),
+  tags: z.array(z.string()).optional(),
+  isPublic: z.boolean().optional(),
+  version: z.number().int().positive(), // optimistic locking
+  customIdParts: z.array(customIdPartSchema).optional(),
+});
+
+// List inventories with search and filtering
+router.get('/', async (req, res) => {
+  const { search, category, tag, page = '1', limit = '20' } = req.query;
+  const pageNum = parseInt(page as string) || 1;
+  const limitNum = parseInt(limit as string) || 20;
+  const skip = (pageNum - 1) * limitNum;
+
+  const where: any = {};
+  
+  // Full-text search across title, description, and tags
+  if (search) {
+    where.OR = [
+      { title: { contains: search as string, mode: 'insensitive' } },
+      { description: { contains: search as string, mode: 'insensitive' } },
+      { tags: { hasSome: [search as string] } }
+    ];
+  }
+
+  if (category) {
+    where.categoryId = category;
+  }
+
+  if (tag) {
+    where.tags = { has: tag as string };
+  }
+
+  const [inventories, total] = await Promise.all([
+    prisma.inventory.findMany({
+      where,
+      include: { owner: true, category: true },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limitNum,
+    }),
+    prisma.inventory.count({ where })
+  ]);
+
+  res.json({
+    inventories,
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      total,
+      pages: Math.ceil(total / limitNum)
+    }
+  });
+});
+
+// Get single inventory (full detail)
+router.get('/:id', async (req, res) => {
+  const inventory = await prisma.inventory.findUnique({
+    where: { id: req.params.id },
+    include: {
+      owner: true,
+      category: true,
+      fields: true,
+      customIdParts: { orderBy: { order: 'asc' } },
+      accessList: { include: { user: true } },
+      _count: {
+        select: { items: true, comments: true }
+      }
+    },
+  });
+  if (!inventory) return res.status(404).json({ message: 'Not found' });
+  res.json(inventory);
+});
+
+// Get inventory statistics
+router.get('/:id/stats', async (req, res) => {
+  const inventory = await prisma.inventory.findUnique({
+    where: { id: req.params.id },
+    include: {
+      fields: true,
+      items: {
+        select: { values: true }
+      }
+    }
+  });
+
+  if (!inventory) return res.status(404).json({ message: 'Not found' });
+
+  const stats: any = {
+    totalItems: inventory.items.length,
+    fieldStats: {}
+  };
+
+  // Calculate statistics for each field type
+  for (const field of inventory.fields) {
+    if (field.type === 'NUMBER') {
+      const numbers = inventory.items
+        .map(item => (item.values as any)[field.name])
+        .filter(val => typeof val === 'number' && !isNaN(val));
+      
+      if (numbers.length > 0) {
+        stats.fieldStats[field.name] = {
+          type: 'number',
+          count: numbers.length,
+          min: Math.min(...numbers),
+          max: Math.max(...numbers),
+          average: numbers.reduce((a, b) => a + b, 0) / numbers.length
+        };
+      }
+    } else if (field.type === 'STRING') {
+      const values = inventory.items
+        .map(item => (item.values as any)[field.name])
+        .filter(val => typeof val === 'string' && val.length > 0);
+      
+      if (values.length > 0) {
+        const valueCounts: Record<string, number> = {};
+        values.forEach(val => {
+          valueCounts[val] = (valueCounts[val] || 0) + 1;
+        });
+        
+        const topValues = Object.entries(valueCounts)
+          .sort(([,a], [,b]) => b - a)
+          .slice(0, 5);
+        
+        stats.fieldStats[field.name] = {
+          type: 'string',
+          count: values.length,
+          topValues,
+          uniqueCount: Object.keys(valueCounts).length
+        };
+      }
+    } else if (field.type === 'BOOLEAN') {
+      const values = inventory.items
+        .map(item => (item.values as any)[field.name])
+        .filter(val => typeof val === 'boolean');
+      
+      if (values.length > 0) {
+        const trueCount = values.filter(v => v === true).length;
+        stats.fieldStats[field.name] = {
+          type: 'boolean',
+          count: values.length,
+          trueCount,
+          falseCount: values.length - trueCount
+        };
+      }
+    }
+  }
+
+  res.json(stats);
+});
+
+// Get tag autocomplete
+router.get('/tags/autocomplete', async (req, res) => {
+  const { prefix = '' } = req.query;
+  
+  const tags = await prisma.inventory.findMany({
+    select: { tags: true },
+    where: {
+      tags: { hasSome: [prefix as string] }
+    }
+  });
+
+  const allTags = tags.flatMap(inv => inv.tags);
+  const uniqueTags = [...new Set(allTags)]
+    .filter(tag => tag.toLowerCase().startsWith((prefix as string).toLowerCase()))
+    .sort()
+    .slice(0, 10);
+
+  res.json(uniqueTags);
+});
+
+// Get popular inventories (top 5 by item count)
+router.get('/popular/top5', async (req, res) => {
+  const popular = await prisma.inventory.findMany({
+    include: {
+      owner: true,
+      category: true,
+      _count: { select: { items: true } }
+    },
+    orderBy: { items: { _count: 'desc' } },
+    take: 5
+  });
+
+  res.json(popular);
+});
+
+// Create inventory (owner or any authenticated user)
+router.post('/', ensureAuth, async (req, res) => {
+  try {
+    const parsed = createInventorySchema.parse(req.body);
+    const user = (req as any).user;
+    
+    // Validate custom ID parts
+    if (parsed.customIdParts && parsed.customIdParts.length > 0) {
+      const validationError = validateCustomIdParts(parsed.customIdParts);
+      if (validationError) {
+        return res.status(400).json({ message: validationError });
+      }
+    }
+
+    const created = await prisma.inventory.create({
+      data: {
+        title: parsed.title,
+        description: parsed.description,
+        categoryId: parsed.categoryId ?? null,
+        imageUrl: parsed.imageUrl,
+        tags: parsed.tags ?? [],
+        isPublic: parsed.isPublic ?? false,
+        ownerId: user.id,
+        customIdParts: parsed.customIdParts?.length
+          ? {
+              create: parsed.customIdParts.map(p => ({
+                type: p.type,
+                format: p.format ?? null,
+                order: p.order,
+              })),
+            }
+          : undefined,
+      },
+      include: {
+        owner: true,
+        category: true,
+        customIdParts: { orderBy: { order: 'asc' } },
+      },
+    });
+    res.status(201).json(created);
+  } catch (err: any) {
+    if (err?.name === 'ZodError') {
+      return res.status(400).json({ message: 'Validation failed', issues: err.issues });
+    }
+    res.status(500).json({ message: 'Failed to create inventory' });
+  }
+});
+
+// Update inventory (owner or admin), with optimistic locking
+router.put('/:id', ensureAuth, async (req, res) => {
+  try {
+    const parsed = updateInventorySchema.parse(req.body);
+    const user = (req as any).user;
+
+    const inv = await prisma.inventory.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, ownerId: true, version: true },
+    });
+    if (!inv) return res.status(404).json({ message: 'Not found' });
+
+    // Only owner or admin can edit inventory settings
+    if (inv.ownerId !== user.id && !user.isAdmin) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    // Validate custom ID parts if provided
+    if (parsed.customIdParts !== undefined) {
+      const validationError = validateCustomIdParts(parsed.customIdParts);
+      if (validationError) {
+        return res.status(400).json({ message: validationError });
+      }
+    }
+
+    // Build update data
+    const updateData: any = {};
+    if (parsed.title !== undefined) updateData.title = parsed.title;
+    if (parsed.description !== undefined) updateData.description = parsed.description;
+    if (parsed.categoryId !== undefined) updateData.categoryId = parsed.categoryId ?? null;
+    if (parsed.imageUrl !== undefined) updateData.imageUrl = parsed.imageUrl ?? null;
+    if (parsed.tags !== undefined) updateData.tags = parsed.tags;
+    if (parsed.isPublic !== undefined) updateData.isPublic = parsed.isPublic;
+
+    // Perform optimistic update and parts replacement in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Update inventory row only if version matches; increment version
+      const updatedCount = await tx.inventory.updateMany({
+        where: { id: req.params.id, version: parsed.version },
+        data: {
+          ...updateData,
+          version: { increment: 1 },
+        },
+      });
+
+      if (updatedCount.count !== 1) {
+        return { conflict: true } as const;
+      }
+
+      // Replace customIdParts if provided - this is safe because we're in a transaction
+      if (parsed.customIdParts !== undefined) {
+        await tx.customIdPart.deleteMany({ where: { inventoryId: req.params.id } });
+        if (parsed.customIdParts.length > 0) {
+          await tx.customIdPart.createMany({
+            data: parsed.customIdParts.map(p => ({
+              inventoryId: req.params.id,
+              type: p.type,
+              format: p.format ?? null,
+              order: p.order,
+            })),
+          });
+        }
+      }
+
+      const refreshed = await tx.inventory.findUnique({
+        where: { id: req.params.id },
+        include: {
+          owner: true,
+          category: true,
+          customIdParts: { orderBy: { order: 'asc' } },
+        },
+      });
+      return { conflict: false, data: refreshed } as const;
+    });
+
+    if (result.conflict) {
+      return res.status(409).json({ message: 'Version conflict. Please reload and try again.' });
+    }
+
+    res.json(result.data);
+  } catch (err: any) {
+    if (err?.name === 'ZodError') {
+      return res.status(400).json({ message: 'Validation failed', issues: err.issues });
+    }
+    res.status(500).json({ message: 'Failed to update inventory' });
+  }
+});
+
+// Delete inventory (owner or admin)
+router.delete('/:id', ensureAuth, async (req, res) => {
+  try {
+    const user = (req as any).user;
+    
+    const inv = await prisma.inventory.findUnique({
+      where: { id: req.params.id },
+      select: { id: true, ownerId: true },
+    });
+    if (!inv) return res.status(404).json({ message: 'Not found' });
+
+    if (inv.ownerId !== user.id && !user.isAdmin) {
+      return res.status(403).json({ message: 'Forbidden' });
+    }
+
+    await prisma.inventory.delete({ where: { id: req.params.id } });
+    res.json({ message: 'Inventory deleted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to delete inventory' });
+  }
+});
+
+// Helper function to validate custom ID parts
+function validateCustomIdParts(parts: any[]): string | null {
+  if (parts.length > 10) {
+    return 'Maximum 10 custom ID parts allowed';
+  }
+
+  // Check for duplicate orders
+  const orders = parts.map(p => p.order);
+  if (new Set(orders).size !== orders.length) {
+    return 'Duplicate order values found in custom ID parts';
+  }
+
+  // Validate format strings for specific types
+  for (const part of parts) {
+    if (part.type === 'DATE' && part.format) {
+      // Basic date format validation - you could make this more sophisticated
+      const validFormats = ['yyyy', 'MM', 'dd', 'HH', 'mm', 'ss', 'ddd', 'MMM'];
+      const formatParts = part.format.match(/[a-zA-Z]+/g) || [];
+      for (const formatPart of formatParts) {
+        if (!validFormats.includes(formatPart)) {
+          return `Invalid date format: ${formatPart}`;
+        }
+      }
+    }
+    
+    if (part.type === 'SEQUENCE' && part.format) {
+      // Sequence format should be like D3, D4, etc.
+      if (!/^D\d*$/.test(part.format)) {
+        return 'Invalid sequence format. Use D for no padding, D3 for 3-digit padding, etc.';
+      }
+    }
+  }
+
+  return null;
+}
 
 export default router;

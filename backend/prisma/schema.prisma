@@ -75,6 +75,7 @@ model Item {
   user        User      @relation("UserItems", fields: [userId], references: [id])
   customId    String
   values      Json
+  sequence    Int? 
   version     Int       @default(1) // optimistic locking
   comments    Comment[]
   likes       Like[]
@@ -92,6 +93,9 @@ model Access {
   user        User      @relation(fields: [userId], references: [id])
   canWrite    Boolean   @default(false)
   createdAt   DateTime  @default(now())
+
+  @@unique([inventoryId, userId])
+
 }
 
 model Comment {
