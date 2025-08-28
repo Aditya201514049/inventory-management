@@ -8,6 +8,7 @@ import authRouter from './routes/auth';
 import accessRouter from './routes/access';
 import adminRouter from './routes/admin';
 import categoryRouter from './routes/category';
+import itemRouter from './routes/item';
 // import userRouter from './routes/user'; // Add as you create more routers
 
 const app = express();
@@ -31,6 +32,7 @@ app.use('/api/inventories', inventoryRouter);
 app.use('/api/access', accessRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/category', categoryRouter);
+app.use('/api/item', itemRouter);
 // app.use('/api/users', userRouter); // Add more as needed
 
 app.get('/api/health', (req, res) => {

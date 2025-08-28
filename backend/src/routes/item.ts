@@ -1,0 +1,339 @@
+import { Router } from 'express';
+import prisma from '../prisma';
+import { ensureAuth } from '../middleware/ensureAuth';
+import { z } from 'zod';
+
+const router = Router();
+
+// Validation schemas
+const createItemSchema = z.object({
+  customId: z.string().min(1),
+  values: z.record(z.any(), z.any()), // JSON object for field values
+  version: z.number().int().positive().optional().default(1)
+});
+
+const updateItemSchema = z.object({
+  customId: z.string().min(1).optional(),
+  values: z.record(z.any(), z.any()).optional(),
+  version: z.number().int().positive() // Required for optimistic locking
+});
+
+// Helper function to check if user can write to inventory
+async function canWriteToInventory(inventoryId: string, userId: string): Promise<boolean> {
+  const inventory = await prisma.inventory.findUnique({
+    where: { id: inventoryId },
+    select: { ownerId: true, isPublic: true }
+  });
+
+  if (!inventory) return false;
+  
+  // Owner can always write
+  if (inventory.ownerId === userId) return true;
+  
+  // Public inventory - any authenticated user can write
+  if (inventory.isPublic) return true;
+  
+  // Check explicit access
+  const access = await prisma.access.findUnique({
+    where: {
+      inventoryId_userId: { inventoryId, userId }
+    }
+  });
+  
+  return access?.canWrite || false;
+}
+
+// List items in an inventory
+router.get('/inventory/:inventoryId', async (req, res) => {
+  try {
+    const { inventoryId } = req.params;
+    const { page = '1', limit = '20', search = '' } = req.query;
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = parseInt(limit as string) || 20;
+    const skip = (pageNum - 1) * limitNum;
+
+    // Check if inventory exists
+    const inventory = await prisma.inventory.findUnique({
+      where: { id: inventoryId },
+      include: { fields: true }
+    });
+
+    if (!inventory) {
+      return res.status(404).json({ message: 'Inventory not found' });
+    }
+
+    // Build search query for item values
+    const where: any = { inventoryId };
+    if (search) {
+      // Search in customId and field values
+      where.OR = [
+        { customId: { contains: search as string, mode: 'insensitive' } },
+        { values: { path: ['$'], string_contains: search as string } }
+      ];
+    }
+
+    const [items, total] = await Promise.all([
+      prisma.item.findMany({
+        where,
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          _count: { select: { comments: true, likes: true } }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limitNum,
+      }),
+      prisma.item.count({ where })
+    ]);
+
+    res.json({
+      items,
+      inventory: {
+        id: inventory.id,
+        title: inventory.title,
+        fields: inventory.fields
+      },
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to fetch items' });
+  }
+});
+
+// Get single item
+router.get('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const item = await prisma.item.findUnique({
+      where: { id },
+      include: {
+        inventory: {
+          include: { fields: true }
+        },
+        user: { select: { id: true, name: true, email: true } },
+        comments: {
+          include: { user: { select: { id: true, name: true } } },
+          orderBy: { createdAt: 'asc' }
+        },
+        likes: {
+          include: { user: { select: { id: true, name: true } } }
+        }
+      }
+    });
+
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+
+    res.json(item);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to fetch item' });
+  }
+});
+
+// Create new item
+router.post('/inventory/:inventoryId', ensureAuth, async (req, res) => {
+  try {
+    const { inventoryId } = req.params;
+    const user = (req as any).user;
+    const parsed = createItemSchema.parse(req.body);
+
+    // Check if user can write to this inventory
+    const canWrite = await canWriteToInventory(inventoryId, user.id);
+    if (!canWrite) {
+      return res.status(403).json({ message: 'No write access to this inventory' });
+    }
+
+    // Check if customId is unique within this inventory
+    const existingItem = await prisma.item.findUnique({
+      where: {
+        inventoryId_customId: { inventoryId, customId: parsed.customId }
+      }
+    });
+
+    if (existingItem) {
+      return res.status(409).json({ 
+        message: 'Item with this custom ID already exists in this inventory' 
+      });
+    }
+
+    // Create the item
+    const item = await prisma.item.create({
+      data: {
+        inventoryId,
+        userId: user.id,
+        customId: parsed.customId,
+        values: parsed.values as any,
+        version: parsed.version
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        inventory: { select: { title: true } }
+      }
+    });
+
+    res.status(201).json(item);
+  } catch (err: any) {
+    if (err?.name === 'ZodError') {
+      return res.status(400).json({ message: 'Validation failed', issues: err.issues });
+    }
+    res.status(500).json({ message: 'Failed to create item' });
+  }
+});
+
+// Update item
+router.put('/:id', ensureAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = (req as any).user;
+    const parsed = updateItemSchema.parse(req.body);
+
+    // Get the item and check permissions
+    const item = await prisma.item.findUnique({
+      where: { id },
+      include: { inventory: true }
+    });
+
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+
+    // Check if user can write to this inventory
+    const canWrite = await canWriteToInventory(item.inventoryId, user.id);
+    if (!canWrite) {
+      return res.status(403).json({ message: 'No write access to this inventory' });
+    }
+
+    // Check if customId is unique (if being changed)
+    if (parsed.customId && parsed.customId !== item.customId) {
+      const existingItem = await prisma.item.findUnique({
+        where: {
+          inventoryId_customId: { 
+            inventoryId: item.inventoryId, 
+            customId: parsed.customId 
+          }
+        }
+      });
+
+      if (existingItem) {
+        return res.status(409).json({ 
+          message: 'Item with this custom ID already exists in this inventory' 
+        });
+      }
+    }
+
+    // Optimistic locking update
+    const updatedItem = await prisma.item.updateMany({
+      where: { 
+        id, 
+        version: parsed.version 
+      },
+      data: {
+        customId: parsed.customId || item.customId,
+        values: (parsed.values || item.values) as any,
+        version: { increment: 1 }
+      }
+    });
+
+    if (updatedItem.count === 0) {
+      return res.status(409).json({ 
+        message: 'Version conflict. Please reload and try again.' 
+      });
+    }
+
+    // Get the updated item
+    const refreshedItem = await prisma.item.findUnique({
+      where: { id },
+      include: {
+        user: { select: { id: true, name: true, email: true } },
+        inventory: { select: { title: true } }
+      }
+    });
+
+    res.json(refreshedItem);
+  } catch (err: any) {
+    if (err?.name === 'ZodError') {
+      return res.status(400).json({ message: 'Validation failed', issues: err.issues });
+    }
+    res.status(500).json({ message: 'Failed to update item' });
+  }
+});
+
+// Delete item
+router.delete('/:id', ensureAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = (req as any).user;
+
+    // Get the item and check permissions
+    const item = await prisma.item.findUnique({
+      where: { id },
+      include: { inventory: true }
+    });
+
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+
+    // Check if user can write to this inventory
+    const canWrite = await canWriteToInventory(item.inventoryId, user.id);
+    if (!canWrite) {
+      return res.status(403).json({ message: 'No write access to this inventory' });
+    }
+
+    // Delete the item (cascade will handle comments and likes)
+    await prisma.item.delete({ where: { id } });
+
+    res.json({ message: 'Item deleted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to delete item' });
+  }
+});
+
+// Toggle like on item
+router.post('/:id/like', ensureAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = (req as any).user;
+
+    // Check if item exists
+    const item = await prisma.item.findUnique({ where: { id } });
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+
+    // Check if user already liked this item
+    const existingLike = await prisma.like.findUnique({
+      where: {
+        itemId_userId: { itemId: id, userId: user.id }
+      }
+    });
+
+    if (existingLike) {
+      // Unlike
+      await prisma.like.delete({
+        where: { id: existingLike.id }
+      });
+      res.json({ message: 'Like removed', liked: false });
+    } else {
+      // Like
+      await prisma.like.create({
+        data: {
+          itemId: id,
+          userId: user.id
+        }
+      });
+      res.json({ message: 'Item liked', liked: true });
+    }
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to toggle like' });
+  }
+});
+
+export default router;
