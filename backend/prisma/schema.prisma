@@ -52,7 +52,10 @@ model Field {
   name        String
   type        FieldType
   title       String
+  description String?
   visible     Boolean   @default(true)
+  order       Int 
+  validation  Json? 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }

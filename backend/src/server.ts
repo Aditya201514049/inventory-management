@@ -10,6 +10,7 @@ import adminRouter from './routes/admin';
 import categoryRouter from './routes/category';
 import itemRouter from './routes/item';
 import userRouter from './routes/user';
+import fieldRouter from './routes/field';
 // import userRouter from './routes/user'; // Add as you create more routers
 
 const app = express();
@@ -35,6 +36,7 @@ app.use('/api/admin', adminRouter);
 app.use('/api/category', categoryRouter);
 app.use('/api/item', itemRouter);
 app.use('/api/users', userRouter); 
+app.use('/api/fields', fieldRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
