@@ -336,4 +336,170 @@ router.post('/:id/like', ensureAuth, async (req, res) => {
   }
 });
 
+// ... existing code ...
+
+// Add comment to item
+router.post('/:id/comments', ensureAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = (req as any).user;
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ message: 'Comment content is required' });
+    }
+
+    // Check if item exists
+    const item = await prisma.item.findUnique({
+      where: { id },
+      select: { id: true, inventoryId: true }
+    });
+
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+
+    // Create comment
+    const comment = await prisma.comment.create({
+      data: {
+        content: content.trim(),
+        itemId: id,
+        userId: user.id
+      },
+      include: {
+        user: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    res.status(201).json(comment);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to create comment' });
+  }
+});
+
+// Update comment (only by comment author)
+router.put('/:id/comments/:commentId', ensureAuth, async (req, res) => {
+  try {
+    const { id: itemId, commentId } = req.params;
+    const user = (req as any).user;
+    const { content } = req.body;
+
+    if (!content || !content.trim()) {
+      return res.status(400).json({ message: 'Comment content is required' });
+    }
+
+    // Check if comment exists and belongs to user
+    const comment = await prisma.comment.findFirst({
+      where: {
+        id: commentId,
+        itemId: itemId,
+        userId: user.id
+      }
+    });
+
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found or access denied' });
+    }
+
+    // Update comment
+    const updatedComment = await prisma.comment.update({
+      where: { id: commentId },
+      data: { content: content.trim() },
+      include: {
+        user: { select: { id: true, name: true, email: true } }
+      }
+    });
+
+    res.json(updatedComment);
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to update comment' });
+  }
+});
+
+// Delete comment (only by comment author or admin)
+router.delete('/:id/comments/:commentId', ensureAuth, async (req, res) => {
+  try {
+    const { id: itemId, commentId } = req.params;
+    const user = (req as any).user;
+
+    // Check if comment exists
+    const comment = await prisma.comment.findFirst({
+      where: {
+        id: commentId,
+        itemId: itemId
+      },
+      include: {
+        user: { select: { id: true } }
+      }
+    });
+
+    if (!comment) {
+      return res.status(404).json({ message: 'Comment not found' });
+    }
+
+    // Check if user can delete (author or admin)
+    if (comment.user.id !== user.id && !user.isAdmin) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    // Delete comment
+    await prisma.comment.delete({
+      where: { id: commentId }
+    });
+
+    res.json({ message: 'Comment deleted successfully' });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to delete comment' });
+  }
+});
+
+// Get comments for an item (with pagination)
+router.get('/:id/comments', async (req, res) => {
+  try {
+    const { id: itemId } = req.params;
+    const { page = '1', limit = '20' } = req.query;
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = parseInt(limit as string) || 20;
+    const skip = (pageNum - 1) * limitNum;
+
+    // Check if item exists
+    const item = await prisma.item.findUnique({
+      where: { id: itemId },
+      select: { id: true }
+    });
+
+    if (!item) {
+      return res.status(404).json({ message: 'Item not found' });
+    }
+
+    // Get comments with pagination
+    const [comments, total] = await Promise.all([
+      prisma.comment.findMany({
+        where: { itemId },
+        include: {
+          user: { select: { id: true, name: true, email: true } }
+        },
+        orderBy: { createdAt: 'asc' },
+        skip,
+        take: limitNum,
+      }),
+      prisma.comment.count({ where: { itemId } })
+    ]);
+
+    res.json({
+      comments,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: 'Failed to fetch comments' });
+  }
+});
+
+// ... existing code (export default router) ...
+
 export default router;
