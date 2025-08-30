@@ -1,6 +1,10 @@
 import { Search, Package, Users, BarChart3 } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
+import { Link } from 'react-router-dom'
 
 const Home = () => {
+  const { isAuthenticated, user } = useAuth()
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="text-center mb-12">
@@ -10,6 +14,29 @@ const Home = () => {
         <p className="text-xl text-gray-600">
           Organize, track, and manage your inventory with custom fields and smart ID generation
         </p>
+        
+        {isAuthenticated ? (
+          <div className="mt-6">
+            <p className="text-lg text-gray-700 mb-4">
+              Welcome back, {user?.name || user?.email}!
+            </p>
+            <Link 
+              to="/dashboard" 
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-lg"
+            >
+              Go to Dashboard
+            </Link>
+          </div>
+        ) : (
+          <div className="mt-6">
+            <Link 
+              to="/login" 
+              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-lg"
+            >
+              Get Started
+            </Link>
+          </div>
+        )}
       </div>
 
       {/* Search Bar */}

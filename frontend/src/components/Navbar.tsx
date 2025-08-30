@@ -1,25 +1,38 @@
 import { Link } from 'react-router-dom'
-import { Home, User, LogIn } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 
 const Navbar = () => {
+  const { user, isAuthenticated, logout } = useAuth()
+
   return (
     <nav className="bg-white shadow-sm border-b">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-16">
-          <Link to="/" className="flex items-center space-x-2 text-xl font-bold text-gray-900">
-            <Home className="h-6 w-6" />
-            <span>Inventory Manager</span>
+          <Link to="/" className="text-xl font-bold text-gray-900">
+             Inventory Manager
           </Link>
           
           <div className="flex items-center space-x-4">
-            <Link to="/dashboard" className="flex items-center space-x-2 text-gray-600 hover:text-gray-900">
-              <User className="h-5 w-5" />
-              <span>Dashboard</span>
-            </Link>
-            <Link to="/login" className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-              <LogIn className="h-5 w-5" />
-              <span>Login</span>
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">
+                  Dashboard
+                </Link>
+                <span className="text-gray-600">
+                  Welcome, {user?.name || user?.email}
+                </span>
+                <button 
+                  onClick={logout}
+                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <Link to="/login" className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+                Login
+              </Link>
+            )}
           </div>
         </div>
       </div>

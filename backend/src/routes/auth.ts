@@ -4,7 +4,6 @@ import passport from "../config/passport";
 const router = Router();
 
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:4000";
 
 // Google login
 router.get("/google", passport.authenticate("google", { 
@@ -16,7 +15,8 @@ router.get("/google/callback",
     failureRedirect: `${FRONTEND_URL}/login` 
   }),
   (req, res) => {
-    res.redirect(`${FRONTEND_URL}/dashboard`);
+    // Redirect to frontend home page after successful login
+    res.redirect(`${FRONTEND_URL}/`);
   }
 );
 
@@ -30,7 +30,8 @@ router.get("/github/callback",
     failureRedirect: `${FRONTEND_URL}/login` 
   }),
   (req, res) => {
-    res.redirect(`${FRONTEND_URL}/dashboard`);
+    // Redirect to frontend home page after successful login
+    res.redirect(`${FRONTEND_URL}/`);
   }
 );
 
@@ -38,7 +39,8 @@ router.get("/github/callback",
 router.get("/logout", (req, res, next) => {
   req.logout(err => {
     if (err) return next(err);
-    res.redirect(`${FRONTEND_URL}/`);
+    // Redirect to frontend login page after logout
+    res.redirect(`${FRONTEND_URL}/login`);
   });
 });
 
