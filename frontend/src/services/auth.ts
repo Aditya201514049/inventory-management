@@ -21,14 +21,14 @@ export const authService = {
 
   // Login with GitHub
   loginWithGitHub: () => {
-    window.location.href = `${API_URL}/auth/google`
+    window.location.href = `${API_URL}/auth/github`
   },
 
   // Logout
   logout: async () => {
     try {
       await api.get('/auth/logout')
-      window.location.href = '/'
+      // Don't redirect here - let the frontend handle it
     } catch (error) {
       console.error('Logout error:', error)
     }

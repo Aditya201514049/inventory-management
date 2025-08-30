@@ -1,9 +1,15 @@
 import { Search, Package, Users, BarChart3 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Link } from 'react-router-dom'
+import { useEffect } from 'react'
 
 const Home = () => {
-  const { isAuthenticated, user } = useAuth()
+  const { isAuthenticated, user, checkAuth } = useAuth()
+
+  // Check auth when component mounts to detect OAuth return
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   return (
     <div className="max-w-4xl mx-auto">

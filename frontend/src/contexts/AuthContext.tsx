@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { User } from '../services/types'
 import { authService } from '../services/auth'
 
@@ -27,9 +27,12 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
 
-  const checkAuth = async () => {
+  const checkAuth = useCallback(async () => {
+    if (loading) return // Prevent multiple calls while loading
+    
+    setLoading(true)
     try {
       const currentUser = await authService.getCurrentUser()
       setUser(currentUser)
@@ -38,7 +41,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [loading])
 
   const login = (provider: 'google' | 'github') => {
     if (provider === 'google') {
@@ -50,18 +53,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      await authService.logout()
       setUser(null)
-      // No need to redirect - backend will handle it
+      setLoading(false)
+      await authService.logout()
+      window.location.href = '/login'
     } catch (error) {
       console.error('Logout error:', error)
-      setUser(null)
+      window.location.href = '/login'
     }
   }
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
+  // No automatic auth check on mount to prevent loops
+  // Auth will be checked manually when needed
 
   const value: AuthContextType = {
     user,
