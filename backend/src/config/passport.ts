@@ -24,7 +24,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:4000/auth/google/callback", // update port if needed
+      callbackURL: `${process.env.BACKEND_URL || "http://localhost:4000"}/auth/google/callback`, // update port if needed
     },
     async (_, __, profile, done) => {
       try {
@@ -58,7 +58,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
     {
       clientID: process.env.GITHUB_CLIENT_ID,
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
-      callbackURL: "http://localhost:4000/auth/github/callback", // update port if needed
+      callbackURL: `${process.env.BACKEND_URL || "http://localhost:4000"}/auth/github/callback`, // update port if needed
     },
     async (_accessToken, _refreshToken, profile, done) => {
       try {

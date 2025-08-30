@@ -14,7 +14,14 @@ import fieldRouter from './routes/field';
 // import userRouter from './routes/user'; // Add as you create more routers
 
 const app = express();
-app.use(cors());
+
+// Dynamic CORS configuration
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
+
+app.use(cors({
+  origin: FRONTEND_URL,
+  credentials: true, // Important for sessions
+}));
 app.use(express.json());
 
 
