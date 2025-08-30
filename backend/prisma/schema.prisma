@@ -54,7 +54,7 @@ model Field {
   title       String
   description String?
   visible     Boolean   @default(true)
-  order       Int 
+  order       Int       @default(0) 
   validation  Json? 
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
