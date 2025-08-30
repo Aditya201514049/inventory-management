@@ -26,3 +26,5 @@ export default {
   darkMode: 'class',
 }
 
+
+
