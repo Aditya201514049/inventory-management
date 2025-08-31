@@ -1,7 +1,7 @@
 import api from './api'
 import { User } from './types'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+
 
 export const authService = {
   // Get current user
@@ -16,12 +16,12 @@ export const authService = {
 
   // Login with Google
   loginWithGoogle: () => {
-    window.location.href = `${API_URL}/auth/google`
+    window.location.href = `/auth/google`
   },
 
   // Login with GitHub
   loginWithGitHub: () => {
-    window.location.href = `${API_URL}/auth/github`
+    window.location.href = `/auth/github`
   },
 
   // Logout

@@ -18,6 +18,10 @@ const InventoryList = () => {
     queryFn: () => getInventories({ page: currentPage, limit: pageSize })
   });
 
+  // Debug: log what data is coming from backend
+  console.log('InventoryList data:', data);
+  console.log('isLoading:', isLoading, 'error:', error);
+
   const deleteMutation = useMutation({
     mutationFn: deleteInventory,
     onSuccess: () => {

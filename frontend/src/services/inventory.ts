@@ -9,29 +9,25 @@ interface GetInventoriesParams {
   limit?: number;
 }
 
+
 export const getInventories = async (params?: GetInventoriesParams): Promise<PaginatedResponse<Inventory>> => {
   try {
-    // Ensure we have default values for pagination
     const queryParams = {
       page: 1,
       limit: 10,
       ...params
     };
-    
-    const response = await api.get<PaginatedResponse<Inventory>>('/inventories', { 
-      params: queryParams 
-    });
-    
+    const response = await api.get('/inventories', { params: queryParams });
+    // Map backend response to frontend expected shape
     return {
-      data: response.data.data || [],
-      total: response.data.total || 0,
-      page: response.data.page || 1,
-      limit: response.data.limit || 10,
-      totalPages: response.data.totalPages || 1
+      data: response.data.inventories || [],
+      total: response.data.pagination?.total || 0,
+      page: response.data.pagination?.page || 1,
+      limit: response.data.pagination?.limit || 10,
+      totalPages: response.data.pagination?.pages || 1
     };
   } catch (error) {
     console.error('Error fetching inventories:', error);
-    // Return empty paginated response on error
     return {
       data: [],
       total: 0,
@@ -51,6 +47,9 @@ export const getInventory = async (id: string): Promise<Inventory> => {
     throw error;
   }
 };
+
+
+
 
 export const createInventory = async (data: CreateInventoryInput): Promise<Inventory> => {
   try {

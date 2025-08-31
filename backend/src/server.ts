@@ -11,7 +11,7 @@ import categoryRouter from './routes/category';
 import itemRouter from './routes/item';
 import userRouter from './routes/user';
 import fieldRouter from './routes/field';
-// import userRouter from './routes/user'; // Add as you create more routers
+import profileRouter from './routes/profile';
 
 const app = express();
 
@@ -19,17 +19,23 @@ const app = express();
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
 app.use(cors({
-  origin: FRONTEND_URL,
-  credentials: true, // Important for sessions
+  origin: 'http://localhost:3000', // Your frontend URL
+  credentials: true, // Important for cookies/sessions
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
-app.use(express.json());
-
 
 // Session middleware (required for Passport)
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your_secret',
   resave: false,
   saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production', // Set to true in production with HTTPS
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Required for cross-site cookies
+    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+  }
 }));
 
 app.use(passport.initialize());
@@ -44,6 +50,7 @@ app.use('/api/category', categoryRouter);
 app.use('/api/item', itemRouter);
 app.use('/api/users', userRouter); 
 app.use('/api/fields', fieldRouter);
+app.use('/api', profileRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -58,13 +65,6 @@ app.get('/api/protected', (req, res) => {
   }
 });
 
-app.get('/profile', (req, res) => {
-  if ((req as any).isAuthenticated && (req as any).isAuthenticated()) {
-    res.json({ user: req.user });
-  } else {
-    res.status(401).json({ message: 'Unauthorized' });
-  }
-});
 
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
