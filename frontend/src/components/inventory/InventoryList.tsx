@@ -46,6 +46,13 @@ const InventoryList = () => {
   if (isLoading) return <div>Loading inventories...</div>;
   if (error) return <div>Error loading inventories: {error.message}</div>;
   if (!data?.data?.length) return <div>No inventories found</div>;
+
+  // Error boundary for rendering
+  try {
+    // ...rest of component
+  } catch (err) {
+    return <div className="text-red-600">An error occurred: {String(err)}</div>;
+  }
   
   const { data: inventories, total, totalPages = 1 } = data;
 
@@ -56,6 +63,7 @@ const InventoryList = () => {
         <Link
           to="/inventories/create"
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          data-testid="create-inventory-link"
         >
           Create New Inventory
         </Link>

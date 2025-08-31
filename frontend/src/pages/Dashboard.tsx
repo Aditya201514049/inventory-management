@@ -1,11 +1,14 @@
 import { Plus, Package, Settings } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
 const Dashboard = () => {
+  const navigate = useNavigate();
+
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">My Dashboard</h1>
-        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2">
+        <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center space-x-2" onClick={() => navigate('/inventories/create')}>
           <Plus className="h-5 w-5" />
           <span>New Inventory</span>
         </button>
@@ -18,7 +21,7 @@ const Dashboard = () => {
             <span>My Inventories</span>
           </h3>
           <p className="text-gray-600 mb-4">Create and manage your inventory templates</p>
-          <button className="text-blue-600 hover:text-blue-700">View all →</button>
+          <button className="text-blue-600 hover:text-blue-700" onClick={() => navigate('/inventories')}>View all →</button>
         </div>
 
         <div className="bg-white p-6 rounded-lg shadow-sm border">
