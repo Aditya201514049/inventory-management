@@ -30,18 +30,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(false)
 
   const checkAuth = useCallback(async () => {
-    if (loading) return // Prevent multiple calls while loading
-    
     setLoading(true)
     try {
       const currentUser = await authService.getCurrentUser()
       setUser(currentUser)
     } catch (error) {
+      console.error('Auth check failed:', error)
       setUser(null)
     } finally {
       setLoading(false)
     }
-  }, [loading])
+  }, [setLoading]) // Update dependency to setLoading
 
   const login = (provider: 'google' | 'github') => {
     if (provider === 'google') {

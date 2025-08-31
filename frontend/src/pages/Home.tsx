@@ -1,15 +1,29 @@
 import { Search, Package, Users, BarChart3 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
 
 const Home = () => {
-  const { isAuthenticated, user, checkAuth } = useAuth()
+  const { isAuthenticated, loading, checkAuth } = useAuth()
 
   // Check auth when component mounts to detect OAuth return
   useEffect(() => {
     checkAuth()
   }, [checkAuth])
+  
+  // If still loading, show loading state
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    )
+  }
+  
+  // If authenticated, redirect to dashboard
+  if (isAuthenticated) {
+    return <Navigate to="/dashboard" replace />
+  }
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -17,32 +31,21 @@ const Home = () => {
         <h1 className="text-4xl font-bold text-gray-900 mb-4">
           Inventory Management System
         </h1>
-        <p className="text-xl text-gray-600">
+        <p className="text-xl text-gray-600 mb-6">
           Organize, track, and manage your inventory with custom fields and smart ID generation
         </p>
         
-        {isAuthenticated ? (
-          <div className="mt-6">
-            <p className="text-lg text-gray-700 mb-4">
-              Welcome back, {user?.name || user?.email}!
-            </p>
-            <Link 
-              to="/dashboard" 
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-lg"
-            >
-              Go to Dashboard
-            </Link>
-          </div>
-        ) : (
-          <div className="mt-6">
-            <Link 
-              to="/login" 
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-lg"
-            >
-              Get Started
-            </Link>
-          </div>
-        )}
+        <div className="mt-6">
+          <p className="text-lg text-gray-700 mb-4">
+            Welcome to Inventory Management System
+          </p>
+          <Link 
+            to="/login" 
+            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-lg"
+          >
+            Get Started
+          </Link>
+        </div>
       </div>
 
       {/* Search Bar */}
