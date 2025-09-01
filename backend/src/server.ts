@@ -18,6 +18,10 @@ const app = express();
 // Dynamic CORS configuration
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 
+// Body parsing middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(cors({
   origin: 'http://localhost:3000', // Your frontend URL
   credentials: true, // Important for cookies/sessions

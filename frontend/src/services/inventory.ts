@@ -9,7 +9,6 @@ interface GetInventoriesParams {
   limit?: number;
 }
 
-
 export const getInventories = async (params?: GetInventoriesParams): Promise<PaginatedResponse<Inventory>> => {
   try {
     const queryParams = {
@@ -40,31 +39,32 @@ export const getInventories = async (params?: GetInventoriesParams): Promise<Pag
 
 export const getInventory = async (id: string): Promise<Inventory> => {
   try {
-    const response = await api.get<{ data: Inventory }>(`/inventories/${id}`);
-    return response.data.data;
+    const response = await api.get<Inventory>(`/inventories/${id}`);
+    return response.data; // Remove .data since backend returns inventory directly
   } catch (error) {
     console.error(`Error fetching inventory ${id}:`, error);
     throw error;
   }
 };
 
-
-
-
 export const createInventory = async (data: CreateInventoryInput): Promise<Inventory> => {
   try {
-    const response = await api.post<{ data: Inventory }>('/inventories', data);
-    return response.data.data;
-  } catch (error) {
+    console.log('Sending to backend:', JSON.stringify(data, null, 2)); // Debug what we're sending
+    const response = await api.post<Inventory>('/inventories', data);
+    return response.data; // Remove .data since backend returns inventory directly
+  } catch (error: any) {
     console.error('Error creating inventory:', error);
+    console.error('Error response data:', error.response?.data); // Show the actual error message
+    console.error('Error status:', error.response?.status);
+    console.error('Full error:', error.response);
     throw error;
   }
 };
 
 export const updateInventory = async (id: string, data: UpdateInventoryInput): Promise<Inventory> => {
   try {
-    const response = await api.put<{ data: Inventory }>(`/inventories/${id}`, data);
-    return response.data.data;
+    const response = await api.put<Inventory>(`/inventories/${id}`, data);
+    return response.data; // Remove .data since backend returns inventory directly
   } catch (error) {
     console.error(`Error updating inventory ${id}:`, error);
     throw error;

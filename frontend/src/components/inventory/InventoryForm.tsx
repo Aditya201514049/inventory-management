@@ -8,19 +8,32 @@ interface InventoryFormProps {
   initialData?: Inventory;
 }
 
+// Define the form data type
+interface FormData {
+  title: string;
+  description?: string;
+  isPublic: boolean;
+  tags: string; // This will be a string in the form
+  customIdParts: any[];
+}
+
 const InventoryForm = ({ initialData }: InventoryFormProps) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const isEditing = !!initialData;
 
-  const { register, handleSubmit, formState: { errors } } = useForm<
-    CreateInventoryInput | UpdateInventoryInput
-  >({
-    defaultValues: initialData || {
+  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+    defaultValues: initialData ? {
+      title: initialData.title,
+      description: initialData.description || '',
+      isPublic: initialData.isPublic,
+      tags: initialData.tags.join(', '), // Convert array to string for form
+      customIdParts: initialData.customIdParts
+    } : {
       title: '',
       description: '',
       isPublic: false,
-      tags: [],
+      tags: '',
       customIdParts: []
     }
   });
@@ -41,8 +54,19 @@ const InventoryForm = ({ initialData }: InventoryFormProps) => {
     }
   });
 
-  const onSubmit = (data: CreateInventoryInput | UpdateInventoryInput) => {
-    mutation.mutate(data);
+  const onSubmit = (formData: FormData) => {
+    // Transform tags from string to array
+    const transformedData: CreateInventoryInput | UpdateInventoryInput = {
+      ...formData,
+      tags: formData.tags
+        .split(',')
+        .map((tag: string) => tag.trim())
+        .filter((tag: string) => tag.length > 0)
+    };
+    
+    console.log('Form data:', formData); // Debug original form data
+    console.log('Transformed data:', transformedData); // Debug transformed data
+    mutation.mutate(transformedData);
   };
 
   return (
