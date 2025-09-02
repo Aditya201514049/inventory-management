@@ -74,15 +74,24 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (parts: CustomIdPart[]) => updateCustomIdParts(inventoryId, parts),
+    mutationFn: (parts: CustomIdPart[]) => {
+      if (!inventory) {
+        throw new Error('Inventory not loaded');
+      }
+      return updateCustomIdParts(inventoryId, parts, inventory.version);
+    },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inventory', inventoryId] });
       setHasUnsavedChanges(false);
       toast.success('Custom ID format saved successfully!');
     },
     onError: (error: any) => {
-      toast.error('Failed to save custom ID format');
       console.error('Save error:', error);
+      if (error.response?.status === 409) {
+        toast.error('Inventory was modified by another user. Please refresh and try again.');
+      } else {
+        toast.error('Failed to save custom ID format');
+      }
     },
   });
 
