@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getInventory } from '../../services/inventory';
 import { generateCustomId, updateCustomIdParts, CustomIdPart } from '../../services/customId';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { toast } from 'react-hot-toast';
 
 interface CustomIdTabProps {
   inventoryId: string;
@@ -62,8 +63,10 @@ const ID_PART_TYPES = [
 export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
   const qc = useQueryClient();
   const [customIdParts, setCustomIdParts] = useState<CustomIdPart[]>([]);
+  const [originalParts, setOriginalParts] = useState<CustomIdPart[]>([]);
   const [previewId, setPreviewId] = useState<string>('');
   const [showAddPart, setShowAddPart] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   const { data: inventory, isLoading } = useQuery({
     queryKey: ['inventory', inventoryId],
@@ -74,6 +77,12 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
     mutationFn: (parts: CustomIdPart[]) => updateCustomIdParts(inventoryId, parts),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inventory', inventoryId] });
+      setHasUnsavedChanges(false);
+      toast.success('Custom ID format saved successfully!');
+    },
+    onError: (error: any) => {
+      toast.error('Failed to save custom ID format');
+      console.error('Save error:', error);
     },
   });
 
@@ -87,6 +96,7 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
   useEffect(() => {
     if (inventory?.customIdParts) {
       setCustomIdParts(inventory.customIdParts);
+      setOriginalParts(inventory.customIdParts);
     }
   }, [inventory]);
 
@@ -95,6 +105,21 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
       generatePreviewMutation.mutate(customIdParts);
     }
   }, [customIdParts]);
+
+  // Check for unsaved changes
+  useEffect(() => {
+    const hasChanges = JSON.stringify(customIdParts) !== JSON.stringify(originalParts);
+    setHasUnsavedChanges(hasChanges);
+  }, [customIdParts, originalParts]);
+
+  const handleSave = () => {
+    updateMutation.mutate(customIdParts);
+  };
+
+  const handleReset = () => {
+    setCustomIdParts(originalParts);
+    setHasUnsavedChanges(false);
+  };
 
   const handleDragEnd = (result: any) => {
     if (!result.destination) return;
@@ -110,7 +135,6 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
     }));
 
     setCustomIdParts(updatedItems);
-    updateMutation.mutate(updatedItems);
   };
 
   const addIdPart = (type: string) => {
@@ -122,7 +146,6 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
 
     const updatedParts = [...customIdParts, newPart];
     setCustomIdParts(updatedParts);
-    updateMutation.mutate(updatedParts);
     setShowAddPart(false);
   };
 
@@ -134,25 +157,44 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
     }));
 
     setCustomIdParts(reorderedParts);
-    updateMutation.mutate(reorderedParts);
   };
 
   const updatePartFormat = (index: number, format: string) => {
     const updatedParts = [...customIdParts];
     updatedParts[index] = { ...updatedParts[index], format };
     setCustomIdParts(updatedParts);
-    updateMutation.mutate(updatedParts);
   };
 
   if (isLoading) return <div>Loading...</div>;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-semibold mb-2">Custom ID Format</h3>
-        <p className="text-gray-600 text-sm">
-          Define how custom IDs are generated for items in this inventory.
-        </p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Custom ID Format</h3>
+          <p className="text-gray-600 text-sm">
+            Define how custom IDs are generated for items in this inventory.
+          </p>
+        </div>
+        
+        {/* Save/Reset Buttons */}
+        {hasUnsavedChanges && (
+          <div className="flex gap-2">
+            <button
+              onClick={handleReset}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              Reset
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={updateMutation.isPending}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              {updateMutation.isPending ? 'Saving...' : 'Save Format'}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Current ID Parts */}
@@ -273,6 +315,21 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
         </div>
       )}
 
+      {/* Saved Format Display */}
+      {!hasUnsavedChanges && customIdParts.length > 0 && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+            </svg>
+            <h4 className="font-medium text-green-900">Format Saved</h4>
+          </div>
+          <p className="text-sm text-green-700">
+            This custom ID format is now active and will be used for all new items.
+          </p>
+        </div>
+      )}
+
       {/* Help */}
       <div className="bg-gray-50 border rounded-lg p-4">
         <h4 className="font-medium mb-2">How it works</h4>
@@ -282,6 +339,7 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
           <li>• Random parts generate different values each time</li>
           <li>• Sequence parts auto-increment (001, 002, 003...)</li>
           <li>• Date parts use the current date when creating items</li>
+          <li>• <strong>Click "Save Format" to apply changes</strong></li>
         </ul>
       </div>
     </div>

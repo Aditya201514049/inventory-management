@@ -2,15 +2,9 @@
 import { useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createItem, updateItem, ItemInput } from '../../services/item';
-
-type Field = {
-  id: string;
-  name: string;
-  title: string;
-  type: 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'SELECT' | 'TEXT' | 'LINK';
-  visible: boolean;
-  description?: string; 
-};
+import { generateCustomId } from '../../services/customId';
+import { Field } from '../../types/field';
+import { useEffect } from 'react';
 
 interface ItemFormProps {
   inventoryId: string;
@@ -24,11 +18,19 @@ interface ItemFormProps {
   onClose: () => void;
 }
 
+interface FormData {
+  customId: string;
+  values: Record<string, any>;
+}
+
 export default function ItemForm({ inventoryId, fields, initialData, onClose }: ItemFormProps) {
   const qc = useQueryClient();
   const isEditing = !!initialData;
 
-  const { register, handleSubmit, formState: { errors } } = useForm({
+  // Only show visible fields that are actually used
+  const visibleFields = fields.filter(f => f.visible);
+
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm<FormData>({
     defaultValues: {
       customId: initialData?.customId || '',
       values: initialData?.values || {},
@@ -36,7 +38,7 @@ export default function ItemForm({ inventoryId, fields, initialData, onClose }: 
   });
 
   const mutation = useMutation({
-    mutationFn: async (data: any) => {
+    mutationFn: async (data: FormData) => {
       const itemData: ItemInput = {
         customId: data.customId,
         values: data.values,
@@ -54,107 +56,204 @@ export default function ItemForm({ inventoryId, fields, initialData, onClose }: 
       onClose();
     },
     onError: (error: any) => {
-      console.error('Item save error:', error);
-      // Handle optimistic locking conflicts
       if (error.response?.status === 409) {
         alert('Item was modified by another user. Please refresh and try again.');
+      } else {
+        alert('Failed to save item. Please try again.');
       }
     }
   });
 
-  const onSubmit = (data: any) => {
+  const onSubmit = (data: FormData) => {
     mutation.mutate(data);
   };
 
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white p-6 rounded-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-        <h2 className="text-xl font-bold mb-4">
-          {isEditing ? 'Edit Item' : 'Add New Item'}
-        </h2>
+  // Add this function with proper typing
+  const generateCustomIdForItem = async (): Promise<string> => {
+    try {
+      const response = await generateCustomId(inventoryId, []);
+      return response.customId || '';
+    } catch (error) {
+      console.error('Failed to generate custom ID:', error);
+      return '';
+    }
+  };
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Custom ID</label>
+  // Update the form to auto-generate custom ID
+  useEffect(() => {
+    if (!isEditing) {
+      generateCustomIdForItem().then((id: string) => {
+        if (id) {
+          setValue('customId', id);
+        }
+      });
+    }
+  }, [isEditing, setValue]);
+
+  const renderField = (field: Field) => {
+    const fieldName = `values.${field.name}` as const;
+    const isRequired = field.validation?.required;
+
+    switch (field.type) {
+      case 'STRING':
+      case 'LINK':
+        return (
+          <input
+            type="text"
+            {...register(fieldName, { 
+              required: isRequired ? `${field.title} is required` : false 
+            })}
+            placeholder={`Enter ${field.title.toLowerCase()}`}
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        );
+      
+      case 'NUMBER':
+        return (
+          <input
+            type="number"
+            {...register(fieldName, { 
+              required: isRequired ? `${field.title} is required` : false,
+              valueAsNumber: true 
+            })}
+            placeholder={`Enter ${field.title.toLowerCase()}`}
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        );
+      
+      case 'DATE':
+        return (
+          <input
+            type="date"
+            {...register(fieldName, { 
+              required: isRequired ? `${field.title} is required` : false 
+            })}
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        );
+      
+      case 'BOOLEAN':
+        return (
+          <div className="mt-1 flex items-center">
             <input
-              type="text"
-              {...register('customId', { required: 'Custom ID is required' })}
-              className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+              type="checkbox"
+              {...register(fieldName)}
+              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
             />
-            {errors.customId && <p className="text-red-500 text-sm">{errors.customId.message}</p>}
+            <span className="ml-2 text-sm text-gray-700">Yes</span>
           </div>
+        );
+      
+      case 'TEXT':
+        return (
+          <textarea
+            rows={3}
+            {...register(fieldName, { 
+              required: isRequired ? `${field.title} is required` : false 
+            })}
+            placeholder={`Enter ${field.title.toLowerCase()}`}
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        );
+      
+      case 'SELECT':
+        const options = field.validation?.options || [];
+        return (
+          <select
+            {...register(fieldName, { 
+              required: isRequired ? `${field.title} is required` : false 
+            })}
+            className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Select {field.title.toLowerCase()}</option>
+            {options.map((option: string) => (
+              <option key={option} value={option}>{option}</option>
+            ))}
+          </select>
+        );
+      
+      default:
+        return <input type="text" className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2" />;
+    }
+  };
 
-          {fields.map((field) => (
-            <div key={field.id}>
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <h2 className="text-xl font-bold mb-4">
+            {isEditing ? 'Edit Item' : 'Add New Item'}
+          </h2>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Custom ID Field */}
+            <div>
               <label className="block text-sm font-medium text-gray-700">
-                {field.title}
-                {field.description && (
-                  <span className="text-gray-500 text-xs ml-1">({field.description})</span>
-                )}
+                Custom ID <span className="text-red-500">*</span>
               </label>
-              
-              {field.type === 'STRING' || field.type === 'LINK' ? (
+              <div className="flex gap-2">
                 <input
                   type="text"
-                  {...register(`values.${field.name}`)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
+                  {...register('customId', { required: 'Custom ID is required' })}
+                  placeholder="Enter custom ID"
+                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                 />
-              ) : field.type === 'NUMBER' ? (
-                <input
-                  type="number"
-                  {...register(`values.${field.name}`, { valueAsNumber: true })}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                />
-              ) : field.type === 'DATE' ? (
-                <input
-                  type="date"
-                  {...register(`values.${field.name}`)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                />
-              ) : field.type === 'BOOLEAN' ? (
-                <div className="mt-1">
-                  <input
-                    type="checkbox"
-                    {...register(`values.${field.name}`)}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded"
-                  />
-                  <span className="ml-2 text-sm text-gray-700">Yes</span>
-                </div>
-              ) : field.type === 'TEXT' ? (
-                <textarea
-                  rows={3}
-                  {...register(`values.${field.name}`)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                />
-              ) : field.type === 'SELECT' ? (
-                <select
-                  {...register(`values.${field.name}`)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2"
-                >
-                  <option value="">Select an option</option>
-                  {/* TODO: Add select options from field validation */}
-                </select>
-              ) : null}
+                {!isEditing && (
+                  <button
+                    type="button"
+                    onClick={() => generateCustomIdForItem().then((id: string) => setValue('customId', id))}
+                    className="mt-1 px-3 py-2 bg-gray-100 border border-gray-300 rounded-md hover:bg-gray-200"
+                  >
+                    Generate
+                  </button>
+                )}
+              </div>
+              {errors.customId && <p className="text-red-500 text-sm mt-1">{errors.customId.message}</p>}
             </div>
-          ))}
 
-          <div className="flex justify-end space-x-2 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={mutation.isPending}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {mutation.isPending ? 'Saving...' : (isEditing ? 'Update' : 'Create')}
-            </button>
-          </div>
-        </form>
+            {/* Dynamic Fields */}
+            {visibleFields.length === 0 ? (
+              <div className="text-gray-500 text-center py-4">
+                No fields defined for this inventory. Add fields in the Fields tab first.
+              </div>
+            ) : (
+              visibleFields.map((field) => (
+                <div key={field.id}>
+                  <label className="block text-sm font-medium text-gray-700">
+                    {field.title}
+                    {field.validation?.required && <span className="text-red-500 ml-1">*</span>}
+                  </label>
+                  {field.description && (
+                    <p className="text-xs text-gray-500 mt-1">{field.description}</p>
+                  )}
+                  {renderField(field)}
+                  {errors.values?.[field.name] && (
+                    <p className="text-red-500 text-sm mt-1">
+                      {String(errors.values[field.name]?.message || 'Invalid value')}
+                    </p>
+                  )}
+                </div>
+              ))
+            )}
+
+            <div className="flex justify-end space-x-2 pt-4">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={mutation.isPending}
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              >
+                {mutation.isPending ? 'Saving...' : (isEditing ? 'Update' : 'Create')}
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
