@@ -1,8 +1,8 @@
 
-import { useState} from 'react';
+import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listItems, deleteItem } from '../../services/item';
-import { Field } from '../../types/field'; // Import the correct type
+import { Field } from '../../types/field';
 import ItemForm from './ItemForm';
 import { toast } from 'react-hot-toast';
 
@@ -11,6 +11,7 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [showItemForm, setShowItemForm] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
 
   const { data, isLoading, error } = useQuery({
@@ -57,12 +58,19 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
     }
   };
 
-  const handleEditItem = (item: any) => {
-    setEditingItem(item);
+  const handleAddItem = () => {
+    setEditingItem(null); // null means new item
+    setShowItemForm(true);
   };
 
-  const handleAddItem = () => {
-    setEditingItem({}); // Empty object for new item
+  const handleEditItem = (item: any) => {
+    setEditingItem(item); // item data for editing
+    setShowItemForm(true);
+  };
+
+  const handleCloseForm = () => {
+    setShowItemForm(false);
+    setEditingItem(null);
   };
 
   if (isLoading) return <div>Loading...</div>;
@@ -185,13 +193,13 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
       )}
 
       {/* Item Form Modal */}
-      {editingItem !== null && (
+      {showItemForm && (
         <ItemForm
           inventoryId={inventoryId}
           fields={fields}
           inventory={inventory}
           initialData={editingItem}
-          onClose={() => setEditingItem(null)}
+          onClose={handleCloseForm}
         />
       )}
     </div>
