@@ -57,6 +57,14 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
     }
   };
 
+  const handleEditItem = (item: any) => {
+    setEditingItem(item);
+  };
+
+  const handleAddItem = () => {
+    setEditingItem({}); // Empty object for new item
+  };
+
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>Error loading items</div>;
 
@@ -88,7 +96,7 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
             </button>
           )}
           <button
-            onClick={() => setEditingItem({})}
+            onClick={handleAddItem}
             className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Add Item
@@ -116,6 +124,7 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
                 </th>
               ))}
               <th className="px-4 py-2 text-left font-medium text-gray-700">Created</th>
+              <th className="px-4 py-2 text-left font-medium text-gray-700">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -137,6 +146,14 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
                 ))}
                 <td className="px-4 py-2 text-sm text-gray-500">
                   {new Date(item.createdAt).toLocaleDateString()}
+                </td>
+                <td className="px-4 py-2">
+                  <button
+                    onClick={() => handleEditItem(item)}
+                    className="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                  >
+                    Edit
+                  </button>
                 </td>
               </tr>
             ))}
