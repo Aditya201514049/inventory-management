@@ -380,6 +380,115 @@ router.delete('/:id', ensureAuth, async (req, res) => {
   }
 });
 
+// Generate custom ID based on format
+router.post('/:id/generate-id', ensureAuth, async (req, res) => {
+  try {
+    const { id: inventoryId } = req.params;
+    const { customIdParts } = req.body;
+
+    if (!customIdParts || !Array.isArray(customIdParts) || customIdParts.length === 0) {
+      return res.status(400).json({ message: 'Custom ID parts are required' });
+    }
+
+    const inventory = await prisma.inventory.findUnique({
+      where: { id: inventoryId },
+      include: { customIdParts: { orderBy: { order: 'asc' } } }
+    });
+
+    if (!inventory) {
+      return res.status(404).json({ message: 'Inventory not found' });
+    }
+
+    // Generate custom ID based on parts
+    let generatedId = '';
+    
+    for (const part of customIdParts) {
+      switch (part.type) {
+        case 'FIXED':
+          generatedId += part.format || '';
+          break;
+          
+        case 'RANDOM6':
+          generatedId += generateRandomString(6);
+          break;
+          
+        case 'RANDOM9':
+          generatedId += generateRandomString(9);
+          break;
+          
+        case 'RANDOM20':
+          generatedId += generateRandomString(20);
+          break;
+          
+        case 'RANDOM32':
+          generatedId += generateRandomString(32);
+          break;
+          
+        case 'GUID':
+          generatedId += generateGUID();
+          break;
+          
+        case 'DATE':
+          generatedId += new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+          break;
+          
+        case 'SEQUENCE':
+          // Get the next sequence number for this inventory
+          const lastItem = await prisma.item.findFirst({
+            where: { inventoryId },
+            orderBy: { sequence: 'desc' },
+            select: { sequence: true }
+          });
+          const nextSequence = (lastItem?.sequence || 0) + 1;
+          generatedId += nextSequence.toString().padStart(3, '0'); // 3-digit padding
+          break;
+          
+        default:
+          return res.status(400).json({ message: `Unknown custom ID type: ${part.type}` });
+      }
+    }
+
+    // Check if generated ID already exists
+    const existingItem = await prisma.item.findUnique({
+      where: {
+        inventoryId_customId: { inventoryId, customId: generatedId }
+      }
+    });
+
+    if (existingItem) {
+      // If ID exists, try generating again (recursive call with limit)
+      return res.status(409).json({ 
+        message: 'Generated ID already exists, please try again',
+        customId: generatedId 
+      });
+    }
+
+    res.json({ customId: generatedId });
+
+  } catch (error) {
+    console.error('Generate ID error:', error);
+    res.status(500).json({ message: 'Failed to generate custom ID' });
+  }
+});
+
+// Helper functions for ID generation
+function generateRandomString(length: number): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+function generateGUID(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+}
+
 // Validate custom ID against format
 router.post('/:id/validate-id', ensureAuth, async (req, res) => {
   try {
