@@ -380,6 +380,90 @@ router.delete('/:id', ensureAuth, async (req, res) => {
   }
 });
 
+// Validate custom ID against format
+router.post('/:id/validate-id', ensureAuth, async (req, res) => {
+  try {
+    const { id: inventoryId } = req.params;
+    const { customId } = req.body;
+
+    if (!customId) {
+      return res.status(400).json({ message: 'Custom ID is required' });
+    }
+
+    const inventory = await prisma.inventory.findUnique({
+      where: { id: inventoryId },
+      include: { customIdParts: { orderBy: { order: 'asc' } } }
+    });
+
+    if (!inventory) {
+      return res.status(404).json({ message: 'Inventory not found' });
+    }
+
+    if (!inventory.customIdParts || inventory.customIdParts.length === 0) {
+      return res.json({ valid: true, message: 'No format defined' });
+    }
+
+    // Check if custom ID already exists
+    const existingItem = await prisma.item.findUnique({
+      where: {
+        inventoryId_customId: { inventoryId, customId }
+      }
+    });
+
+    if (existingItem) {
+      return res.json({ 
+        valid: false, 
+        message: 'Custom ID already exists in this inventory' 
+      });
+    }
+
+    // Validate format (simplified - you can make this more sophisticated)
+    const parts = inventory.customIdParts;
+    let pattern = '';
+    
+    for (const part of parts) {
+      switch (part.type) {
+        case 'FIXED':
+          pattern += (part.format || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+          break;
+        case 'RANDOM6':
+          pattern += '[A-Za-z0-9]{6}';
+          break;
+        case 'RANDOM9':
+          pattern += '[A-Za-z0-9]{9}';
+          break;
+        case 'RANDOM20':
+          pattern += '[A-Za-z0-9]{20}';
+          break;
+        case 'RANDOM32':
+          pattern += '[A-Za-z0-9]{32}';
+          break;
+        case 'GUID':
+          pattern += '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+          break;
+        case 'DATE':
+          pattern += '\\d{4}-\\d{2}-\\d{2}';
+          break;
+        case 'SEQUENCE':
+          pattern += '\\d+';
+          break;
+      }
+    }
+
+    const regex = new RegExp(`^${pattern}$`, 'i');
+    const isValid = regex.test(customId);
+
+    res.json({ 
+      valid: isValid, 
+      message: isValid ? 'Valid format' : 'Custom ID does not match the defined format' 
+    });
+
+  } catch (error) {
+    console.error('Validation error:', error);
+    res.status(500).json({ message: 'Failed to validate custom ID' });
+  }
+});
+
 // Helper function to validate custom ID parts
 function validateCustomIdParts(parts: any[]): string | null {
   if (parts.length > 10) {

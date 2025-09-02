@@ -17,10 +17,10 @@ export const validateCustomId = async (inventoryId: string, customId: string) =>
   return data;
 };
 
-export const updateCustomIdParts = async (inventoryId: string, customIdParts: CustomIdPart[], version: number) => {
-  const { data } = await api.put(`/inventories/${inventoryId}`, { 
+export const saveCustomIdFormat = async (inventoryId: string, customIdParts: CustomIdPart[], version: number) => {
+  const { data } = await api.put(`/inventories/${inventoryId}`, {
     customIdParts,
-    version 
+    version
   });
   return data;
 };

@@ -1,178 +1,65 @@
 import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getInventory } from '../../services/inventory';
-import { generateCustomId, updateCustomIdParts, CustomIdPart } from '../../services/customId';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+import { generateCustomId, saveCustomIdFormat } from '../../services/customId';
 import { toast } from 'react-hot-toast';
 
 interface CustomIdTabProps {
   inventoryId: string;
 }
 
-const ID_PART_TYPES = [
-  { 
-    type: 'FIXED', 
-    label: 'Fixed Text', 
-    description: 'Static text (e.g., "COMP", "LAPTOP")',
-    example: 'COMP'
-  },
-  { 
-    type: 'RANDOM20', 
-    label: 'Random 20-bit', 
-    description: 'Random 20-bit number',
-    example: 'A1B2C'
-  },
-  { 
-    type: 'RANDOM32', 
-    label: 'Random 32-bit', 
-    description: 'Random 32-bit number',
-    example: 'E74FA329'
-  },
-  { 
-    type: 'RANDOM6', 
-    label: 'Random 6-digit', 
-    description: 'Random 6-digit number',
-    example: '123456'
-  },
-  { 
-    type: 'RANDOM9', 
-    label: 'Random 9-digit', 
-    description: 'Random 9-digit number',
-    example: '123456789'
-  },
-  { 
-    type: 'GUID', 
-    label: 'GUID', 
-    description: 'Globally unique identifier',
-    example: '550e8400-e29b-41d4-a716-446655440000'
-  },
-  { 
-    type: 'DATE', 
-    label: 'Date', 
-    description: 'Current date',
-    example: '2025-01-15'
-  },
-  { 
-    type: 'SEQUENCE', 
-    label: 'Sequence', 
-    description: 'Auto-incrementing number',
-    example: '001'
-  },
-];
-
 export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
   const qc = useQueryClient();
-  const [customIdParts, setCustomIdParts] = useState<CustomIdPart[]>([]);
-  const [originalParts, setOriginalParts] = useState<CustomIdPart[]>([]);
-  const [previewId, setPreviewId] = useState<string>('');
-  const [showAddPart, setShowAddPart] = useState(false);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [customIdParts, setCustomIdParts] = useState<any[]>([]);
   const [generatedId, setGeneratedId] = useState<string>('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const { data: inventory, isLoading } = useQuery({
     queryKey: ['inventory', inventoryId],
-    queryFn: () => getInventory(inventoryId),
-  });
-
-  const updateMutation = useMutation({
-    mutationFn: (parts: CustomIdPart[]) => {
-      if (!inventory) {
-        throw new Error('Inventory not loaded');
-      }
-      return updateCustomIdParts(inventoryId, parts, inventory.version);
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['inventory', inventoryId] });
-      setHasUnsavedChanges(false);
-      toast.success('Custom ID format saved successfully!');
-    },
-    onError: (error: any) => {
-      console.error('Save error:', error);
-      if (error.response?.status === 409) {
-        toast.error('Inventory was modified by another user. Please refresh and try again.');
-      } else {
-        toast.error('Failed to save custom ID format');
-      }
-    },
-  });
-
-  const generatePreviewMutation = useMutation({
-    mutationFn: (parts: CustomIdPart[]) => generateCustomId(inventoryId, parts),
-    onSuccess: (data) => {
-      setPreviewId(data.customId || '');
-    },
+    queryFn: () => getInventory(inventoryId)
   });
 
   useEffect(() => {
     if (inventory?.customIdParts) {
-      setCustomIdParts(inventory.customIdParts);
-      setOriginalParts(inventory.customIdParts);
+      setCustomIdParts(inventory.customIdParts.sort((a: any, b: any) => a.order - b.order));
     }
   }, [inventory]);
 
-  useEffect(() => {
-    if (customIdParts.length > 0) {
-      generatePreviewMutation.mutate(customIdParts);
-    }
-  }, [customIdParts]);
-
-  // Check for unsaved changes
-  useEffect(() => {
-    const hasChanges = JSON.stringify(customIdParts) !== JSON.stringify(originalParts);
-    setHasUnsavedChanges(hasChanges);
-  }, [customIdParts, originalParts]);
-
-  const handleSave = () => {
-    updateMutation.mutate(customIdParts);
-  };
-
-  const handleReset = () => {
-    setCustomIdParts(originalParts);
-    setHasUnsavedChanges(false);
-  };
-
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-
-    const items = Array.from(customIdParts);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-
-    // Update order numbers
-    const updatedItems = items.map((item, index) => ({
-      ...item,
-      order: index
-    }));
-
-    setCustomIdParts(updatedItems);
-  };
-
-  const addIdPart = (type: string) => {
-    const newPart: CustomIdPart = {
-      type: type as any,
-      format: null,
+  const addPart = (type: string) => {
+    const newPart = {
+      type,
+      format: type === 'FIXED' ? '' : null,
       order: customIdParts.length
     };
-
-    const updatedParts = [...customIdParts, newPart];
-    setCustomIdParts(updatedParts);
-    setShowAddPart(false);
+    setCustomIdParts([...customIdParts, newPart]);
   };
 
-  const removeIdPart = (index: number) => {
-    const updatedParts = customIdParts.filter((_, i) => i !== index);
-    const reorderedParts = updatedParts.map((part, i) => ({
-      ...part,
-      order: i
-    }));
-
+  const removePart = (index: number) => {
+    const newParts = customIdParts.filter((_, i) => i !== index);
+    // Reorder remaining parts
+    const reorderedParts = newParts.map((part, i) => ({ ...part, order: i }));
     setCustomIdParts(reorderedParts);
   };
 
-  const updatePartFormat = (index: number, format: string) => {
-    const updatedParts = [...customIdParts];
-    updatedParts[index] = { ...updatedParts[index], format };
-    setCustomIdParts(updatedParts);
+  const updatePart = (index: number, field: string, value: any) => {
+    const newParts = [...customIdParts];
+    newParts[index] = { ...newParts[index], [field]: value };
+    setCustomIdParts(newParts);
+  };
+
+  const movePart = (index: number, direction: 'up' | 'down') => {
+    const newParts = [...customIdParts];
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    if (targetIndex >= 0 && targetIndex < newParts.length) {
+      [newParts[index], newParts[targetIndex]] = [newParts[targetIndex], newParts[index]];
+      // Update order
+      newParts.forEach((part, i) => {
+        part.order = i;
+      });
+      setCustomIdParts(newParts);
+    }
   };
 
   const handleGenerate = async () => {
@@ -181,192 +68,197 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
       return;
     }
 
+    setIsGenerating(true);
     try {
       const response = await generateCustomId(inventoryId, customIdParts);
-      setGeneratedId(response.customId || '');
+      setGeneratedId(response.customId);
       toast.success('Custom ID generated!');
     } catch (error) {
       console.error('Generate error:', error);
       toast.error('Failed to generate custom ID');
+    } finally {
+      setIsGenerating(false);
     }
+  };
+
+  const handleSave = async () => {
+    if (customIdParts.length === 0) {
+      toast.error('Please add at least one custom ID part');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await saveCustomIdFormat(inventoryId, customIdParts, inventory?.version || 1);
+      qc.invalidateQueries({ queryKey: ['inventory', inventoryId] });
+      toast.success('Custom ID format saved successfully!');
+    } catch (error) {
+      console.error('Save error:', error);
+      toast.error('Failed to save custom ID format');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const getPartPreview = (part: any) => {
+    switch (part.type) {
+      case 'FIXED':
+        return part.format || 'TEXT';
+      case 'RANDOM6':
+        return 'ABC123';
+      case 'RANDOM9':
+        return 'ABC123DEF';
+      case 'RANDOM20':
+        return 'ABC123DEF456GHI789JKL';
+      case 'RANDOM32':
+        return 'ABC123DEF456GHI789JKL012MNO345PQR';
+      case 'GUID':
+        return '12345678-1234-1234-1234-123456789012';
+      case 'DATE':
+        return '2025-01-15';
+      case 'SEQUENCE':
+        return '001';
+      default:
+        return '???';
+    }
+  };
+
+  const getFormatPreview = () => {
+    return customIdParts.map(part => getPartPreview(part)).join('');
   };
 
   if (isLoading) return <div>Loading...</div>;
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-lg font-semibold mb-2">Custom ID Format</h3>
-          <p className="text-gray-600 text-sm">
-            Define how custom IDs are generated for items in this inventory.
-          </p>
-        </div>
-        
-        {/* Save/Reset Buttons */}
-        {hasUnsavedChanges && (
-          <div className="flex gap-2">
-            <button
-              onClick={handleReset}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-            >
-              Reset
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={updateMutation.isPending}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-            >
-              {updateMutation.isPending ? 'Saving...' : 'Save Format'}
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Current ID Parts */}
       <div>
-        <h4 className="font-medium mb-3">ID Parts</h4>
-        {customIdParts.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-            <p>No ID parts defined yet.</p>
-            <p className="text-sm">Add parts to create a custom ID format.</p>
-          </div>
-        ) : (
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="id-parts">
-              {(provided) => (
-                <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                  {customIdParts.map((part, index) => {
-                    const partType = ID_PART_TYPES.find(t => t.type === part.type);
-                    return (
-                      <Draggable key={`${part.type}-${index}`} draggableId={`${part.type}-${index}`} index={index}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className={`p-4 border rounded-lg bg-white ${
-                              snapshot.isDragging ? 'shadow-lg' : 'shadow-sm'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div {...provided.dragHandleProps} className="cursor-move">
-                                  <svg className="w-5 h-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M7 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM7 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 2a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 8a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM13 14a2 2 0 1 0 0 4 2 2 0 0 0 0-4z" />
-                                  </svg>
-                                </div>
-                                <div>
-                                  <div className="font-medium">{partType?.label}</div>
-                                  <div className="text-sm text-gray-600">{partType?.description}</div>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {part.type === 'FIXED' && (
-                                  <input
-                                    type="text"
-                                    value={part.format || ''}
-                                    onChange={(e) => updatePartFormat(index, e.target.value)}
-                                    placeholder="Enter fixed text"
-                                    className="px-2 py-1 border rounded text-sm"
-                                  />
-                                )}
-                                <button
-                                  onClick={() => removeIdPart(index)}
-                                  className="text-red-600 hover:text-red-800"
-                                >
-                                  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                  </svg>
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </Draggable>
-                    );
-                  })}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
-        )}
+        <h3 className="text-lg font-semibold mb-4">Custom ID Format</h3>
+        <p className="text-gray-600 mb-4">
+          Define how custom IDs should be generated for items in this inventory.
+        </p>
       </div>
 
-      {/* Add Part Button */}
-      <div>
-        {!showAddPart ? (
-          <button
-            onClick={() => setShowAddPart(true)}
-            className="px-4 py-2 border border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-gray-400 hover:text-gray-700"
-          >
-            + Add ID Part
-          </button>
-        ) : (
-          <div className="border rounded-lg p-4">
-            <h5 className="font-medium mb-3">Choose ID Part Type</h5>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-              {ID_PART_TYPES.map((type) => (
-                <button
-                  key={type.type}
-                  onClick={() => addIdPart(type.type)}
-                  className="text-left p-3 border rounded hover:bg-gray-50"
-                >
-                  <div className="font-medium">{type.label}</div>
-                  <div className="text-sm text-gray-600">{type.description}</div>
-                  <div className="text-xs text-gray-500 mt-1">Example: {type.example}</div>
-                </button>
-              ))}
-            </div>
-            <button
-              onClick={() => setShowAddPart(false)}
-              className="mt-3 text-sm text-gray-600 hover:text-gray-800"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Preview */}
+      {/* Format Preview */}
       {customIdParts.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-medium text-blue-900 mb-2">Preview</h4>
-          <div className="text-lg font-mono text-blue-800">
-            {generatePreviewMutation.isPending ? 'Generating...' : previewId || 'No preview available'}
+        <div className="bg-blue-50 p-4 rounded-lg">
+          <h4 className="font-medium text-blue-900 mb-2">Format Preview:</h4>
+          <div className="font-mono text-blue-800 bg-white p-2 rounded border">
+            {getFormatPreview()}
           </div>
-          <p className="text-sm text-blue-700 mt-1">
-            This is how new item IDs will be generated
-          </p>
         </div>
       )}
 
-      {/* Saved Format Display */}
-      {!hasUnsavedChanges && customIdParts.length > 0 && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <div className="flex items-center gap-2 mb-2">
-            <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </svg>
-            <h4 className="font-medium text-green-900">Format Saved</h4>
+      {/* Add Parts */}
+      <div>
+        <h4 className="font-medium mb-3">Add ID Parts:</h4>
+        <div className="flex flex-wrap gap-2">
+          {['FIXED', 'RANDOM6', 'RANDOM9', 'RANDOM20', 'RANDOM32', 'GUID', 'DATE', 'SEQUENCE'].map(type => (
+            <button
+              key={type}
+              onClick={() => addPart(type)}
+              className="px-3 py-1 bg-gray-200 hover:bg-gray-300 rounded text-sm"
+            >
+              + {type}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Current Parts */}
+      <div>
+        <h4 className="font-medium mb-3">Current Format:</h4>
+        {customIdParts.length === 0 ? (
+          <p className="text-gray-500 italic">No custom ID parts defined</p>
+        ) : (
+          <div className="space-y-2">
+            {customIdParts.map((part, index) => (
+              <div key={index} className="flex items-center gap-2 p-3 bg-gray-50 rounded">
+                <span className="text-sm text-gray-500 w-8">{index + 1}.</span>
+                
+                <select
+                  value={part.type}
+                  onChange={(e) => updatePart(index, 'type', e.target.value)}
+                  className="px-2 py-1 border rounded text-sm"
+                >
+                  <option value="FIXED">Fixed Text</option>
+                  <option value="RANDOM6">Random 6 chars</option>
+                  <option value="RANDOM9">Random 9 chars</option>
+                  <option value="RANDOM20">Random 20 chars</option>
+                  <option value="RANDOM32">Random 32 chars</option>
+                  <option value="GUID">GUID</option>
+                  <option value="DATE">Date</option>
+                  <option value="SEQUENCE">Sequence</option>
+                </select>
+
+                {part.type === 'FIXED' && (
+                  <input
+                    type="text"
+                    value={part.format || ''}
+                    onChange={(e) => updatePart(index, 'format', e.target.value)}
+                    placeholder="Enter fixed text"
+                    className="px-2 py-1 border rounded text-sm flex-1"
+                  />
+                )}
+
+                <span className="text-sm text-gray-600 font-mono">
+                  {getPartPreview(part)}
+                </span>
+
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => movePart(index, 'up')}
+                    disabled={index === 0}
+                    className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
+                  >
+                    ↑
+                  </button>
+                  <button
+                    onClick={() => movePart(index, 'down')}
+                    disabled={index === customIdParts.length - 1}
+                    className="px-2 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded disabled:opacity-50"
+                  >
+                    ↓
+                  </button>
+                  <button
+                    onClick={() => removePart(index)}
+                    className="px-2 py-1 text-xs bg-red-200 hover:bg-red-300 rounded"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
-          <p className="text-sm text-green-700">
-            This custom ID format is now active and will be used for all new items.
-          </p>
+        )}
+      </div>
+
+      {/* Generated ID */}
+      {generatedId && (
+        <div className="bg-green-50 p-4 rounded-lg">
+          <h4 className="font-medium text-green-900 mb-2">Generated ID:</h4>
+          <div className="font-mono text-green-800 bg-white p-2 rounded border">
+            {generatedId}
+          </div>
         </div>
       )}
 
-      {/* Help */}
-      <div className="bg-gray-50 border rounded-lg p-4">
-        <h4 className="font-medium mb-2">How it works</h4>
-        <ul className="text-sm text-gray-600 space-y-1">
-          <li>• Drag and drop parts to reorder them</li>
-          <li>• Fixed text parts require you to enter the text</li>
-          <li>• Random parts generate different values each time</li>
-          <li>• Sequence parts auto-increment (001, 002, 003...)</li>
-          <li>• Date parts use the current date when creating items</li>
-          <li>• <strong>Click "Save Format" to apply changes</strong></li>
-        </ul>
+      {/* Actions */}
+      <div className="flex gap-3">
+        <button
+          onClick={handleGenerate}
+          disabled={customIdParts.length === 0 || isGenerating}
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+        >
+          {isGenerating ? 'Generating...' : 'Generate ID'}
+        </button>
+        
+        <button
+          onClick={handleSave}
+          disabled={customIdParts.length === 0 || isSaving}
+          className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+        >
+          {isSaving ? 'Saving...' : 'Save Format'}
+        </button>
       </div>
     </div>
   );
