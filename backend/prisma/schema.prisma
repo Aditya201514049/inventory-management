@@ -105,9 +105,9 @@ model Comment {
   id          String    @id @default(uuid())
   content     String    @db.Text // Markdown-friendly
   inventoryId String?
-  inventory   Inventory? @relation(fields: [inventoryId], references: [id])
+  inventory   Inventory? @relation(fields: [inventoryId], references: [id], onDelete: Cascade)
   itemId      String?
-  item        Item?     @relation(fields: [itemId], references: [id])
+  item        Item?     @relation(fields: [itemId], references: [id], onDelete: Cascade)
   userId      String
   user        User      @relation(fields: [userId], references: [id])
   createdAt   DateTime  @default(now())
@@ -116,7 +116,7 @@ model Comment {
 model Like {
   id       String   @id @default(uuid())
   itemId   String
-  item     Item     @relation(fields: [itemId], references: [id])
+  item     Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
   userId   String
   user     User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())

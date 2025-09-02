@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listItems, deleteItem } from '../../services/item';
 import ItemForm from './ItemForm';
+import { toast } from 'react-hot-toast';
 
 type Field = {
   id: string;
@@ -30,10 +31,19 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
   const totalPages = data?.pagination?.pages ?? 1;
 
   const del = useMutation({
-    mutationFn: (id: string) => deleteItem(id),
-    onSuccess: () => {
-      setSelected([]);
+    mutationFn: (id: string) => {
+      console.log('Deleting item with ID:', id); // Debug log
+      return deleteItem(id);
+    },
+    onSuccess: (data, id) => {
+      console.log('Successfully deleted item:', id); // Debug log
+      setSelected(prev => prev.filter(itemId => itemId !== id));
       qc.invalidateQueries({ queryKey: ['items', inventoryId] });
+      toast.success('Item deleted successfully');
+    },
+    onError: (error: any, id) => {
+      console.error('Delete error for item:', id, error); // Debug log
+      toast.error(`Failed to delete item: ${error.message || 'Unknown error'}`);
     },
   });
 
@@ -56,8 +66,20 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
   };
 
   const handleDelete = () => {
-    if (selected.length > 0 && window.confirm(`Delete ${selected.length} item(s)?`)) {
-      selected.forEach(id => del.mutate(id));
+    if (selected.length === 0) {
+      toast.error('Please select items to delete');
+      return;
+    }
+
+    const confirmMessage = selected.length === 1 
+      ? 'Are you sure you want to delete this item?' 
+      : `Are you sure you want to delete ${selected.length} items?`;
+
+    if (window.confirm(confirmMessage)) {
+      console.log('Deleting selected items:', selected); // Debug log
+      selected.forEach(id => {
+        del.mutate(id);
+      });
     }
   };
 
@@ -80,7 +102,7 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
             disabled={!selected.length}
             onClick={handleDelete}
           >
-            Delete
+            Delete {selected.length > 0 && `(${selected.length})`}
           </button>
         </div>
         <input
@@ -90,6 +112,13 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
           onChange={e => { setPage(1); setSearch(e.target.value); }}
         />
       </div>
+
+      {/* Debug info */}
+      {selected.length > 0 && (
+        <div className="text-sm text-gray-600">
+          Selected: {selected.length} item(s) - {selected.join(', ')}
+        </div>
+      )}
 
       {isLoading ? (
         <div>Loading...</div>
