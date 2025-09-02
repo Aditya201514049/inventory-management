@@ -336,8 +336,6 @@ router.post('/:id/like', ensureAuth, async (req, res) => {
   }
 });
 
-// ... existing code ...
-
 // Add comment to item
 router.post('/:id/comments', ensureAuth, async (req, res) => {
   try {
@@ -500,6 +498,20 @@ router.get('/:id/comments', async (req, res) => {
   }
 });
 
-// ... existing code (export default router) ...
+// Add to backend/src/routes/item.ts in the create/update endpoints
+const validateCustomIdFormat = async (inventoryId: string, customId: string) => {
+  const inventory = await prisma.inventory.findUnique({
+    where: { id: inventoryId },
+    include: { customIdParts: { orderBy: { order: 'asc' } } }
+  });
+
+  if (!inventory?.customIdParts?.length) {
+    return true; // No format set
+  }
+
+  // Validate against the format
+  // Implementation depends on your specific format requirements
+  return true; // Placeholder
+};
 
 export default router;

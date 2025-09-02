@@ -67,6 +67,7 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
   const [previewId, setPreviewId] = useState<string>('');
   const [showAddPart, setShowAddPart] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [generatedId, setGeneratedId] = useState<string>('');
 
   const { data: inventory, isLoading } = useQuery({
     queryKey: ['inventory', inventoryId],
@@ -172,6 +173,22 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
     const updatedParts = [...customIdParts];
     updatedParts[index] = { ...updatedParts[index], format };
     setCustomIdParts(updatedParts);
+  };
+
+  const handleGenerate = async () => {
+    if (customIdParts.length === 0) {
+      toast.error('Please add at least one custom ID part');
+      return;
+    }
+
+    try {
+      const response = await generateCustomId(inventoryId, customIdParts);
+      setGeneratedId(response.customId || '');
+      toast.success('Custom ID generated!');
+    } catch (error) {
+      console.error('Generate error:', error);
+      toast.error('Failed to generate custom ID');
+    }
   };
 
   if (isLoading) return <div>Loading...</div>;
