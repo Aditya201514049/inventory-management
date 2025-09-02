@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { listItems, deleteItem } from '../../services/item';
+import ItemForm from './ItemForm';
 
 type Field = {
   id: string;
@@ -16,6 +17,8 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<string[]>([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<any>(null);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['items', inventoryId, page, search],
@@ -39,24 +42,43 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
     [fields]
   );
 
+  const handleAdd = () => {
+    setEditingItem(null);
+    setShowForm(true);
+  };
+
+  const handleEdit = () => {
+    if (selected.length === 1) {
+      const item = items.find((it: any) => it.id === selected[0]);
+      setEditingItem(item);
+      setShowForm(true);
+    }
+  };
+
+  const handleDelete = () => {
+    if (selected.length > 0 && window.confirm(`Delete ${selected.length} item(s)?`)) {
+      selected.forEach(id => del.mutate(id));
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-col sm:flex-row gap-3 justify-between">
         <div className="flex items-center gap-2">
-          <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => {/* TODO: open create form */}}>
+          <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={handleAdd}>
             Add
           </button>
           <button
             className="px-3 py-1 border rounded"
             disabled={selected.length !== 1}
-            onClick={() => {/* TODO: open edit form for selected[0] */}}
+            onClick={handleEdit}
           >
             Edit
           </button>
           <button
             className="px-3 py-1 border rounded"
             disabled={!selected.length}
-            onClick={() => selected.forEach(id => del.mutate(id))}
+            onClick={handleDelete}
           >
             Delete
           </button>
@@ -124,6 +146,19 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
             Next
           </button>
         </div>
+      )}
+
+      {/* Item Form Modal */}
+      {showForm && (
+        <ItemForm
+          inventoryId={inventoryId}
+          fields={fields}
+          initialData={editingItem}
+          onClose={() => {
+            setShowForm(false);
+            setEditingItem(null);
+          }}
+        />
       )}
     </div>
   );
