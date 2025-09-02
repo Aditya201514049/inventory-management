@@ -150,6 +150,26 @@ router.post('/inventory/:inventoryId', ensureAuth, async (req, res) => {
       return res.status(403).json({ message: 'No write access to this inventory' });
     }
 
+    // Get inventory with custom ID parts for validation
+    const inventory = await prisma.inventory.findUnique({
+      where: { id: inventoryId },
+      include: { customIdParts: { orderBy: { order: 'asc' } } }
+    });
+
+    if (!inventory) {
+      return res.status(404).json({ message: 'Inventory not found' });
+    }
+
+    // Validate custom ID format if format is defined
+    if (inventory.customIdParts && inventory.customIdParts.length > 0) {
+      const isValidFormat = await validateCustomIdFormat(inventoryId, parsed.customId);
+      if (!isValidFormat) {
+        return res.status(400).json({ 
+          message: 'Custom ID does not match the defined format for this inventory' 
+        });
+      }
+    }
+
     // Check if customId is unique within this inventory
     const existingItem = await prisma.item.findUnique({
       where: {
@@ -210,8 +230,23 @@ router.put('/:id', ensureAuth, async (req, res) => {
       return res.status(403).json({ message: 'No write access to this inventory' });
     }
 
-    // Check if customId is unique (if being changed)
+    // Get inventory with custom ID parts for validation
+    const inventory = await prisma.inventory.findUnique({
+      where: { id: item.inventoryId },
+      include: { customIdParts: { orderBy: { order: 'asc' } } }
+    });
+
+    // Validate custom ID format if format is defined and customId is being changed
     if (parsed.customId && parsed.customId !== item.customId) {
+      if (inventory?.customIdParts && inventory.customIdParts.length > 0) {
+        const isValidFormat = await validateCustomIdFormat(item.inventoryId, parsed.customId);
+        if (!isValidFormat) {
+          return res.status(400).json({ 
+            message: 'Custom ID does not match the defined format for this inventory' 
+          });
+        }
+      }
+
       const existingItem = await prisma.item.findUnique({
         where: {
           inventoryId_customId: { 
@@ -498,20 +533,53 @@ router.get('/:id/comments', async (req, res) => {
   }
 });
 
-// Add to backend/src/routes/item.ts in the create/update endpoints
-const validateCustomIdFormat = async (inventoryId: string, customId: string) => {
+// Helper function to validate custom ID format
+async function validateCustomIdFormat(inventoryId: string, customId: string): Promise<boolean> {
   const inventory = await prisma.inventory.findUnique({
     where: { id: inventoryId },
     include: { customIdParts: { orderBy: { order: 'asc' } } }
   });
 
   if (!inventory?.customIdParts?.length) {
-    return true; // No format set
+    return true; // No format set, any ID is valid
   }
 
-  // Validate against the format
-  // Implementation depends on your specific format requirements
-  return true; // Placeholder
-};
+  const parts = inventory.customIdParts;
+  let pattern = '';
+  
+  for (const part of parts) {
+    switch (part.type) {
+      case 'FIXED':
+        pattern += (part.format || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        break;
+      case 'RANDOM6':
+        pattern += '[A-Za-z0-9]{6}';
+        break;
+      case 'RANDOM9':
+        pattern += '[A-Za-z0-9]{9}';
+        break;
+      case 'RANDOM20':
+        pattern += '[A-Za-z0-9]{20}';
+        break;
+      case 'RANDOM32':
+        pattern += '[A-Za-z0-9]{32}';
+        break;
+      case 'GUID':
+        pattern += '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
+        break;
+      case 'DATE':
+        pattern += '\\d{4}-\\d{2}-\\d{2}';
+        break;
+      case 'SEQUENCE':
+        pattern += '\\d+';
+        break;
+      default:
+        return false; // Unknown type
+    }
+  }
+
+  const regex = new RegExp(`^${pattern}$`, 'i');
+  return regex.test(customId);
+}
 
 export default router;

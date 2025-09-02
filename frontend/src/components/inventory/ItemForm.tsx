@@ -24,6 +24,7 @@ export default function ItemForm({ inventoryId, fields, inventory, initialData, 
   const qc = useQueryClient();
   const [isValidating, setIsValidating] = useState(false);
   const [customIdError, setCustomIdError] = useState<string>('');
+  const [isCustomIdValid, setIsCustomIdValid] = useState<boolean>(true);
 
   const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm({
     defaultValues: {
@@ -36,7 +37,14 @@ export default function ItemForm({ inventoryId, fields, inventory, initialData, 
 
   // Validate custom ID against format
   useEffect(() => {
-    if (customId && inventory?.customIdParts?.length > 0) {
+    // If there's a custom ID format defined, validate the custom ID
+    if (inventory?.customIdParts?.length > 0) {
+      if (!customId || customId.trim() === '') {
+        setCustomIdError('Custom ID is required');
+        setIsCustomIdValid(false);
+        return;
+      }
+
       const validateId = async () => {
         setIsValidating(true);
         setCustomIdError('');
@@ -45,9 +53,14 @@ export default function ItemForm({ inventoryId, fields, inventory, initialData, 
           const response = await validateCustomId(inventoryId, customId);
           if (!response.valid) {
             setCustomIdError(response.message || 'Invalid custom ID format');
+            setIsCustomIdValid(false);
+          } else {
+            setCustomIdError('');
+            setIsCustomIdValid(true);
           }
         } catch (error) {
           setCustomIdError('Failed to validate custom ID');
+          setIsCustomIdValid(false);
         } finally {
           setIsValidating(false);
         }
@@ -55,6 +68,10 @@ export default function ItemForm({ inventoryId, fields, inventory, initialData, 
 
       const timeoutId = setTimeout(validateId, 500); // Debounce
       return () => clearTimeout(timeoutId);
+    } else {
+      // No format defined, so any custom ID is valid
+      setCustomIdError('');
+      setIsCustomIdValid(true);
     }
   }, [customId, inventoryId, inventory?.customIdParts]);
 
@@ -68,6 +85,7 @@ export default function ItemForm({ inventoryId, fields, inventory, initialData, 
       const response = await generateCustomId(inventoryId, inventory.customIdParts);
       setValue('customId', response.customId);
       setCustomIdError('');
+      setIsCustomIdValid(true);
       toast.success('Custom ID generated!');
     } catch (error) {
       toast.error('Failed to generate custom ID');
@@ -99,8 +117,15 @@ export default function ItemForm({ inventoryId, fields, inventory, initialData, 
   });
 
   const onSubmit = (data: any) => {
-    if (customIdError) {
-      toast.error('Please fix the custom ID format error');
+    // Check if custom ID format is enforced and validation failed
+    if (inventory?.customIdParts?.length > 0 && !isCustomIdValid) {
+      toast.error('Please fix the custom ID format error before saving');
+      return;
+    }
+
+    // Check if custom ID is required but empty
+    if (inventory?.customIdParts?.length > 0 && (!data.customId || data.customId.trim() === '')) {
+      toast.error('Custom ID is required');
       return;
     }
 
@@ -139,14 +164,49 @@ export default function ItemForm({ inventoryId, fields, inventory, initialData, 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Custom ID *
+              {inventory?.customIdParts?.length > 0 && (
+                <span className="text-xs text-gray-500 ml-2">
+                  (Format enforced)
+                </span>
+              )}
             </label>
+            
+            {/* Show format preview if available */}
+            {inventory?.customIdParts?.length > 0 && (
+              <div className="mb-2 p-2 bg-blue-50 rounded border">
+                <p className="text-xs text-blue-700 font-medium">Required Format:</p>
+                <p className="text-sm text-blue-800 font-mono">
+                  {inventory.customIdParts
+                    .sort((a: any, b: any) => a.order - b.order)
+                    .map((part: any) => {
+                      switch (part.type) {
+                        case 'FIXED': return part.format || 'TEXT';
+                        case 'RANDOM6': return 'ABC123';
+                        case 'RANDOM9': return 'ABC123DEF';
+                        case 'RANDOM20': return 'ABC123DEF456GHI789JKL';
+                        case 'RANDOM32': return 'ABC123DEF456GHI789JKL012MNO345PQR';
+                        case 'GUID': return '12345678-1234-1234-1234-123456789012';
+                        case 'DATE': return '2025-01-15';
+                        case 'SEQUENCE': return '001';
+                        default: return '???';
+                      }
+                    })
+                    .join('')}
+                </p>
+              </div>
+            )}
+            
             <div className="flex gap-2">
               <input
                 {...register('customId', { required: 'Custom ID is required' })}
                 className={`flex-1 px-3 py-2 border rounded-md ${
-                  errors.customId || customIdError ? 'border-red-500' : 'border-gray-300'
+                  errors.customId || customIdError ? 'border-red-500' : 
+                  isCustomIdValid && customId ? 'border-green-500' : 'border-gray-300'
                 }`}
-                placeholder="Enter custom ID"
+                placeholder={inventory?.customIdParts?.length > 0 ? 
+                  "Enter custom ID matching the format above" : 
+                  "Enter custom ID"
+                }
               />
               {inventory?.customIdParts?.length > 0 && (
                 <button
@@ -158,14 +218,19 @@ export default function ItemForm({ inventoryId, fields, inventory, initialData, 
                 </button>
               )}
             </div>
+            
+            {/* Status indicators */}
+            {isValidating && (
+              <p className="text-blue-500 text-sm mt-1">Validating format...</p>
+            )}
+            {!isValidating && isCustomIdValid && customId && (
+              <p className="text-green-500 text-sm mt-1">✓ Format is valid</p>
+            )}
             {errors.customId && (
               <p className="text-red-500 text-sm mt-1">{errors.customId.message}</p>
             )}
             {customIdError && (
               <p className="text-red-500 text-sm mt-1">{customIdError}</p>
-            )}
-            {isValidating && (
-              <p className="text-blue-500 text-sm mt-1">Validating...</p>
             )}
           </div>
 
@@ -283,7 +348,7 @@ export default function ItemForm({ inventoryId, fields, inventory, initialData, 
             </button>
             <button
               type="submit"
-              disabled={isLoading || !!customIdError}
+              disabled={isLoading || !isCustomIdValid || isValidating}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
               {isLoading ? 'Saving...' : (initialData ? 'Update' : 'Create')}
