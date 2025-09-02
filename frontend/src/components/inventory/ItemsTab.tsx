@@ -1,0 +1,130 @@
+
+import { useState, useMemo } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { listItems, deleteItem } from '../../services/item';
+
+type Field = {
+  id: string;
+  name: string;
+  title: string;
+  type: 'STRING' | 'NUMBER' | 'DATE' | 'BOOLEAN' | 'SELECT' | 'TEXT' | 'LINK';
+  visible: boolean;
+};
+
+export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
+  const qc = useQueryClient();
+  const [page, setPage] = useState(1);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<string[]>([]);
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['items', inventoryId, page, search],
+    queryFn: () => listItems(inventoryId, { page, limit: 20, search }),
+  });
+
+  const items = data?.items ?? [];
+  const fields: Field[] = data?.inventory?.fields ?? [];
+  const totalPages = data?.pagination?.pages ?? 1;
+
+  const del = useMutation({
+    mutationFn: (id: string) => deleteItem(id),
+    onSuccess: () => {
+      setSelected([]);
+      qc.invalidateQueries({ queryKey: ['items', inventoryId] });
+    },
+  });
+
+  const columns = useMemo(
+    () => [{ key: 'customId', title: 'ID' }, ...fields.filter(f => f.visible).map(f => ({ key: f.name, title: f.title }))],
+    [fields]
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-3 justify-between">
+        <div className="flex items-center gap-2">
+          <button className="px-3 py-1 bg-blue-600 text-white rounded" onClick={() => {/* TODO: open create form */}}>
+            Add
+          </button>
+          <button
+            className="px-3 py-1 border rounded"
+            disabled={selected.length !== 1}
+            onClick={() => {/* TODO: open edit form for selected[0] */}}
+          >
+            Edit
+          </button>
+          <button
+            className="px-3 py-1 border rounded"
+            disabled={!selected.length}
+            onClick={() => selected.forEach(id => del.mutate(id))}
+          >
+            Delete
+          </button>
+        </div>
+        <input
+          className="border px-3 py-2 rounded w-full sm:w-64"
+          placeholder="Search..."
+          value={search}
+          onChange={e => { setPage(1); setSearch(e.target.value); }}
+        />
+      </div>
+
+      {isLoading ? (
+        <div>Loading...</div>
+      ) : error ? (
+        <div className="text-red-600">Failed to load items</div>
+      ) : (
+        <div className="border rounded overflow-hidden">
+          <div className="grid grid-cols-12 bg-gray-50 px-3 py-2 text-sm font-medium">
+            <div className="col-span-1">
+              <input
+                type="checkbox"
+                checked={items.length > 0 && selected.length === items.length}
+                onChange={e => setSelected(e.target.checked ? items.map((it: any) => it.id) : [])}
+              />
+            </div>
+            {columns.map(col => (
+              <div key={col.key} className="col-span-11 sm:col-span-3 md:col-span-2">
+                {col.title}
+              </div>
+            ))}
+          </div>
+
+          {items.map((it: any) => (
+            <div key={it.id} className="grid grid-cols-12 px-3 py-2 border-t hover:bg-gray-50">
+              <div className="col-span-1">
+                <input
+                  type="checkbox"
+                  checked={selected.includes(it.id)}
+                  onChange={e =>
+                    setSelected(e.target.checked ? [...selected, it.id] : selected.filter(id => id !== it.id))
+                  }
+                />
+              </div>
+              <div className="col-span-11 grid grid-cols-12 gap-2">
+                <div className="col-span-12 sm:col-span-3">{it.customId}</div>
+                {fields.filter(f => f.visible).map(f => (
+                  <div key={f.id} className="col-span-6 sm:col-span-3 md:col-span-2">
+                    {String(it.values?.[f.name] ?? '')}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex justify-end items-center gap-2">
+          <button className="px-3 py-1 border rounded" disabled={page === 1} onClick={() => setPage(p => p - 1)}>
+            Prev
+          </button>
+          <span className="text-sm">Page {page} / {totalPages}</span>
+          <button className="px-3 py-1 border rounded" disabled={page === totalPages} onClick={() => setPage(p => p + 1)}>
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
