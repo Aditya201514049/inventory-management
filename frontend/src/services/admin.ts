@@ -36,7 +36,7 @@ export interface UsersResponse {
 
 // Get admin dashboard statistics
 export const getAdminStats = async (): Promise<AdminStats> => {
-  const response = await api.get('/api/admin/stats');
+  const response = await api.get('/admin/stats');
   return response.data;
 };
 
@@ -53,37 +53,37 @@ export const getUsers = async (params: {
   if (params.search) searchParams.set('search', params.search);
   if (params.blocked !== undefined) searchParams.set('blocked', params.blocked.toString());
 
-  const response = await api.get(`/api/admin/users?${searchParams}`);
+  const response = await api.get(`/admin/users?${searchParams}`);
   return response.data;
 };
 
 // Get single user details
 export const getUser = async (userId: string): Promise<AdminUser> => {
-  const response = await api.get(`/api/admin/users/${userId}`);
+  const response = await api.get(`/admin/users/${userId}`);
   return response.data;
 };
 
 // Promote user to admin
 export const promoteUser = async (userId: string): Promise<void> => {
-  await api.post(`/api/admin/users/${userId}/promote`);
+  await api.post(`/admin/users/${userId}/promote`);
 };
 
 // Demote admin to regular user
 export const demoteUser = async (userId: string): Promise<void> => {
-  await api.post(`/api/admin/users/${userId}/demote`);
+  await api.post(`/admin/users/${userId}/demote`);
 };
 
 // Block user
 export const blockUser = async (userId: string): Promise<void> => {
-  await api.post(`/api/admin/users/${userId}/block`);
+  await api.post(`/admin/users/${userId}/block`);
 };
 
 // Unblock user
 export const unblockUser = async (userId: string): Promise<void> => {
-  await api.post(`/api/admin/users/${userId}/unblock`);
+  await api.post(`/admin/users/${userId}/unblock`);
 };
 
 // Delete user
 export const deleteUser = async (userId: string): Promise<void> => {
-  await api.delete(`/api/admin/users/${userId}`);
+  await api.delete(`/admin/users/${userId}`);
 };

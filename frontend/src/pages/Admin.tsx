@@ -24,25 +24,42 @@ import {
   MessageSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import DebugAuth from '../components/DebugAuth';
 
 const AdminPage = () => {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
   const [filterBlocked, setFilterBlocked] = useState<boolean | undefined>(undefined);
   const [page, setPage] = useState(1);
-  const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
 
   // Fetch admin stats
-  const { data: stats, isLoading: statsLoading } = useQuery({
+  const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
     queryKey: ['admin-stats'],
-    queryFn: getAdminStats
+    queryFn: getAdminStats,
+    retry: 1
   });
 
   // Fetch users
-  const { data: usersData, isLoading: usersLoading } = useQuery({
+  const { data: usersData, isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['admin-users', page, search, filterBlocked],
-    queryFn: () => getUsers({ page, search, blocked: filterBlocked })
+    queryFn: () => getUsers({ page, search, blocked: filterBlocked }),
+    retry: 1
   });
+
+  // Handle errors with useEffect
+  React.useEffect(() => {
+    if (statsError) {
+      console.error('Stats error:', statsError);
+      toast.error('Failed to load admin statistics');
+    }
+  }, [statsError]);
+
+  React.useEffect(() => {
+    if (usersError) {
+      console.error('Users error:', usersError);
+      toast.error('Failed to load users');
+    }
+  }, [usersError]);
 
   // Mutations
   const promoteMutation = useMutation({
@@ -91,7 +108,6 @@ const AdminPage = () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
       toast.success('User deleted');
-      setSelectedUser(null);
     },
     onError: () => toast.error('Failed to delete user')
   });
@@ -130,8 +146,26 @@ const AdminPage = () => {
     return <div className="flex justify-center py-8">Loading admin dashboard...</div>;
   }
 
+  if (statsError) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <h2 className="text-lg font-semibold text-red-800 mb-2">Admin Access Error</h2>
+          <p className="text-red-700">
+            Unable to load admin dashboard. Please ensure you are logged in as an admin user.
+          </p>
+          <p className="text-sm text-red-600 mt-2">
+            Error: {statsError?.message || 'Unknown error'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
+      <DebugAuth />
+      
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
         <p className="text-gray-600">Manage users, permissions, and system overview</p>
@@ -226,6 +260,12 @@ const AdminPage = () => {
         <div className="overflow-x-auto">
           {usersLoading ? (
             <div className="flex justify-center py-8">Loading users...</div>
+          ) : usersError ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 m-4">
+              <p className="text-red-700">Failed to load users: {usersError?.message || 'Unknown error'}</p>
+            </div>
+          ) : !usersData || !('users' in usersData) || !usersData.users?.length ? (
+            <div className="text-center py-8 text-gray-500">No users found</div>
           ) : (
             <table className="w-full">
               <thead className="bg-gray-50">
