@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { getUsers } from '../services/admin';
 import { getUserInventories } from '../services/inventory';
+import { getUserStats } from '../services/profile';
 import { 
   User, 
   Mail, 
@@ -17,10 +18,21 @@ const ProfilePage = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'inventories'>('overview');
 
-  // Get user's detailed stats (reusing admin endpoint but filtered for current user)
+  // Get user's detailed stats using dedicated profile endpoint
   const { data: userStats } = useQuery({
     queryKey: ['user-profile-stats', user?.id],
-    queryFn: () => getUsers({ search: user?.email }),
+    queryFn: async () => {
+      if (user?.isAdmin) {
+        // Admin can use admin endpoint
+        return getUsers({ search: user?.email });
+      } else {
+        // Non-admin users use profile stats endpoint
+        const stats = await getUserStats();
+        return {
+          users: [stats]
+        };
+      }
+    },
     enabled: !!user?.email
   });
 
@@ -39,9 +51,13 @@ const ProfilePage = () => {
     if (userInventories) {
       console.log('User inventories data:', userInventories);
     }
+    if (userStats) {
+      console.log('User stats data:', userStats);
+    }
     console.log('Current user:', user);
     console.log('User ID for query:', user?.id);
-  }, [inventoriesError, userInventories, user]);
+    console.log('Is admin:', user?.isAdmin);
+  }, [inventoriesError, userInventories, user, userStats]);
 
   const currentUserData = userStats?.users?.[0];
 

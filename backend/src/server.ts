@@ -54,7 +54,7 @@ app.use('/api/category', categoryRouter);
 app.use('/api/item', itemRouter);
 app.use('/api/users', userRouter); 
 app.use('/api/fields', fieldRouter);
-app.use('/api', profileRouter);
+app.use('/api/profile', profileRouter);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });

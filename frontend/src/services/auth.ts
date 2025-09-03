@@ -7,7 +7,7 @@ export const authService = {
   // Get current user
   getCurrentUser: async (): Promise<User | null> => {
     try {
-      const response = await api.get('/profile')
+      const response = await api.get('/profile/profile')
       return response.data.user
     } catch (error) {
       return null
