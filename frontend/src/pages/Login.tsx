@@ -1,17 +1,13 @@
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
 const Login = () => {
   const { login, isAuthenticated } = useAuth()
-  const navigate = useNavigate()
 
-  // Redirect if already logged in
-  useEffect(() => {
-    if (isAuthenticated) {
-      navigate('/')
-    }
-  }, [isAuthenticated, navigate])
+  // Simple redirect without useEffect
+  if (isAuthenticated) {
+    window.location.href = '/dashboard'
+    return null
+  }
 
   return (
     <div className="max-w-md mx-auto">

@@ -51,14 +51,38 @@ router.get('/', async (req, res) => {
   const skip = (pageNum - 1) * limitNum;
 
   const where: any = {};
+  const user = (req as any).user;
+  
+  // Access control: Non-authenticated users only see public inventories
+  if (!user) {
+    where.isPublic = true;
+  } else {
+    // Authenticated users see public inventories + their own + ones they have access to
+    where.OR = [
+      { isPublic: true },
+      { ownerId: user.id },
+      { accessList: { some: { userId: user.id } } }
+    ];
+  }
   
   // Full-text search across title, description, and tags
   if (search) {
-    where.OR = [
+    const searchConditions = [
       { title: { contains: search as string, mode: 'insensitive' } },
       { description: { contains: search as string, mode: 'insensitive' } },
       { tags: { hasSome: [search as string] } }
     ];
+    
+    // Combine search with access control
+    if (where.OR) {
+      where.AND = [
+        { OR: where.OR },
+        { OR: searchConditions }
+      ];
+      delete where.OR;
+    } else {
+      where.OR = searchConditions;
+    }
   }
 
   if (category) {

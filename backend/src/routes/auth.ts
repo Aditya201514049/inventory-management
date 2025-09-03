@@ -15,8 +15,8 @@ router.get("/google/callback",
     failureRedirect: `${FRONTEND_URL}/login` 
   }),
   (req, res) => {
-    // Redirect to frontend home page after successful login
-    res.redirect(`${FRONTEND_URL}/`);
+    // Redirect to frontend dashboard after successful login
+    res.redirect(`${FRONTEND_URL}/dashboard`);
   }
 );
 
@@ -30,8 +30,8 @@ router.get("/github/callback",
     failureRedirect: `${FRONTEND_URL}/login` 
   }),
   (req, res) => {
-    // Redirect to frontend home page after successful login
-    res.redirect(`${FRONTEND_URL}/`);
+    // Redirect to frontend dashboard after successful login
+    res.redirect(`${FRONTEND_URL}/dashboard`);
   }
 );
 

@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from 'react'
+import { ReactNode, useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -8,18 +8,19 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { isAuthenticated, loading, checkAuth } = useAuth()
+  const [hasChecked, setHasChecked] = useState(false)
 
-  // Check auth when component mounts if not already authenticated
+  // Check auth once when component mounts
   useEffect(() => {
-    if (!isAuthenticated && !loading) {
-      checkAuth()
+    if (!hasChecked) {
+      checkAuth().finally(() => setHasChecked(true))
     }
-  }, [isAuthenticated, loading, checkAuth])
+  }, [checkAuth, hasChecked])
 
-  if (loading) {
+  if (!hasChecked || loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="text-lg">Loading...</div>
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
       </div>
     )
   }

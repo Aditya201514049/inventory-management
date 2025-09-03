@@ -35,12 +35,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const currentUser = await authService.getCurrentUser()
       setUser(currentUser)
     } catch (error) {
-      console.error('Auth check failed:', error)
       setUser(null)
     } finally {
       setLoading(false)
     }
-  }, [setLoading]) // Update dependency to setLoading
+  }, [])
 
   const login = (provider: 'google' | 'github') => {
     if (provider === 'google') {
@@ -53,17 +52,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     try {
       setUser(null)
-      setLoading(false)
       await authService.logout()
-      window.location.href = '/login'
+      window.location.href = '/'
     } catch (error) {
       console.error('Logout error:', error)
-      window.location.href = '/login'
+      window.location.href = '/'
     }
   }
-
-  // No automatic auth check on mount to prevent loops
-  // Auth will be checked manually when needed
 
   const value: AuthContextType = {
     user,
