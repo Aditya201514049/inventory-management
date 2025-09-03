@@ -24,7 +24,6 @@ import {
   MessageSquare
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import DebugAuth from '../components/DebugAuth';
 
 const AdminPage = () => {
   const queryClient = useQueryClient();
@@ -164,8 +163,6 @@ const AdminPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <DebugAuth />
-      
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
         <p className="text-gray-600">Manage users, permissions, and system overview</p>
