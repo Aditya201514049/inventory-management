@@ -442,20 +442,42 @@ router.delete('/:id', ensureAuth, async (req, res) => {
   try {
     const user = (req as any).user;
     
+    console.log('Delete request - User:', { id: user.id, isAdmin: user.isAdmin });
+    
     const inv = await prisma.inventory.findUnique({
       where: { id: req.params.id },
       select: { id: true, ownerId: true },
     });
     if (!inv) return res.status(404).json({ message: 'Not found' });
 
+    console.log('Inventory to delete:', { id: inv.id, ownerId: inv.ownerId });
+    console.log('Access check:', { isOwner: inv.ownerId === user.id, isAdmin: user.isAdmin });
+
     // Enhanced access control: Owner or admin can delete inventory
     if (inv.ownerId !== user.id && !user.isAdmin) {
+      console.log('Delete forbidden - not owner and not admin');
       return res.status(403).json({ message: 'Forbidden: Only inventory owner or admin can delete this inventory' });
     }
 
-    await prisma.inventory.delete({ where: { id: req.params.id } });
+    console.log('Delete authorized - proceeding');
+    
+    // Delete inventory and all related records in a transaction
+    await prisma.$transaction(async (tx) => {
+      // Delete related records first to avoid foreign key constraints
+      await tx.like.deleteMany({ where: { item: { inventoryId: req.params.id } } });
+      await tx.comment.deleteMany({ where: { inventoryId: req.params.id } });
+      await tx.item.deleteMany({ where: { inventoryId: req.params.id } });
+      await tx.access.deleteMany({ where: { inventoryId: req.params.id } });
+      await tx.field.deleteMany({ where: { inventoryId: req.params.id } });
+      await tx.customIdPart.deleteMany({ where: { inventoryId: req.params.id } });
+      
+      // Finally delete the inventory
+      await tx.inventory.delete({ where: { id: req.params.id } });
+    });
+    
     res.json({ message: 'Inventory deleted successfully' });
   } catch (err: any) {
+    console.error('Delete inventory error:', err);
     res.status(500).json({ message: 'Failed to delete inventory' });
   }
 });
