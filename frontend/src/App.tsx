@@ -7,6 +7,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Admin from './pages/Admin';
+import Profile from './pages/Profile';
 import ProtectedRoute from './components/ProtectedRoute';
 // Import the new inventory pages
 import InventoriesPage from './pages/inventories';
@@ -39,6 +40,9 @@ function App() {
                   
                   {/* Admin Route */}
                   <Route path="/admin" element={<Admin />} />
+                  
+                  {/* Profile Route */}
+                  <Route path="/profile" element={<Profile />} />
                 </Route>
               </Routes>
             </main>

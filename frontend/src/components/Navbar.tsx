@@ -25,9 +25,12 @@ const Navbar = () => {
                     Admin
                   </Link>
                 )}
-                <span className="text-gray-600">
+                <Link 
+                  to="/profile" 
+                  className="text-gray-600 hover:text-gray-900 hover:underline"
+                >
                   Welcome, {user?.name || user?.email}
-                </span>
+                </Link>
                 <button 
                   onClick={logout}
                   className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
