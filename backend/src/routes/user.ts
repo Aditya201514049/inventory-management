@@ -4,6 +4,46 @@ import { ensureAuth } from '../middleware/ensureAuth';
 
 const router = Router();
 
+// Search users by name or email (for autocomplete)
+router.get('/search', ensureAuth, async (req, res) => {
+  try {
+    const { q } = req.query;
+    
+    if (!q || typeof q !== 'string' || q.length < 2) {
+      return res.json([]);
+    }
+    
+    const users = await prisma.user.findMany({
+      where: {
+        AND: [
+          { blocked: false }, // Don't include blocked users
+          {
+            OR: [
+              { name: { contains: q, mode: 'insensitive' } },
+              { email: { contains: q, mode: 'insensitive' } }
+            ]
+          }
+        ]
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true
+      },
+      take: 10, // Limit results for performance
+      orderBy: [
+        { name: 'asc' },
+        { email: 'asc' }
+      ]
+    });
+    
+    res.json(users);
+  } catch (error) {
+    console.error('Error searching users:', error);
+    res.status(500).json({ message: 'Failed to search users' });
+  }
+});
+
 // Get current user's profile
 router.get('/profile', ensureAuth, async (req, res) => {
   try {

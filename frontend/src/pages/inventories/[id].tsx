@@ -6,7 +6,8 @@ import { Inventory } from '../../types/inventory';
 import InventoryTabs from '../../components/inventory/InventoryTabs';
 import ItemsTab from '../../components/inventory/ItemsTab';
 import FieldsTab from '../../components/inventory/FieldsTab';
-import CustomIdTab from '../../components/inventory/CustomIdTab'; // Add this import
+import CustomIdTab from '../../components/inventory/CustomIdTab';
+import AccessTab from '../../components/inventory/AccessTab';
 
 const InventoryDetailPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -34,6 +35,7 @@ const InventoryDetailPage = () => {
           { id: 'fields', label: 'Fields', node: <FieldsTab inventoryId={id!} /> },
           { id: 'items', label: 'Items', node: <ItemsTab inventoryId={id!} /> },
           { id: 'customId', label: 'Custom IDs', node: <CustomIdTab inventoryId={id!} /> },
+          { id: 'access', label: 'Access', node: <AccessTab inventoryId={id!} inventory={inventory} /> },
           { id: 'settings', label: 'Settings', node: <InventoryForm initialData={inventory} /> },
         ]}
       />
