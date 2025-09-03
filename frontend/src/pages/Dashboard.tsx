@@ -18,7 +18,7 @@ const Dashboard = () => {
         <div className="bg-white p-6 rounded-lg shadow-sm border">
           <h3 className="text-lg font-semibold mb-4 flex items-center space-x-2">
             <Package className="h-5 w-5 text-blue-600" />
-            <span>My Inventories</span>
+            <span>Inventories</span>
           </h3>
           <p className="text-gray-600 mb-4">Create and manage your inventory templates</p>
           <button className="text-blue-600 hover:text-blue-700" onClick={() => navigate('/inventories')}>View all →</button>
