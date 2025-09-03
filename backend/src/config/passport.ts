@@ -62,8 +62,31 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
     },
     async (_accessToken, _refreshToken, profile, done) => {
       try {
-        const email = profile.emails?.[0].value;
-        if (!email) return done(new Error("No email from GitHub"), undefined);
+        let email = profile.emails?.[0]?.value;
+        
+        // If no email from profile, try to get primary email from GitHub API
+        if (!email && _accessToken) {
+          try {
+            const fetch = (await import('node-fetch')).default;
+            const emailResponse = await fetch('https://api.github.com/user/emails', {
+              headers: {
+                'Authorization': `token ${_accessToken}`,
+                'User-Agent': 'inventory-management-app'
+              }
+            });
+            const emails = await emailResponse.json() as any[];
+            const primaryEmail = emails.find(e => e.primary && e.verified);
+            email = primaryEmail?.email;
+          } catch (apiError) {
+            console.log('Could not fetch email from GitHub API:', apiError);
+          }
+        }
+        
+        // If still no email, use username@github.local as fallback
+        if (!email) {
+          email = `${profile.username}@github.local`;
+          console.log(`No email available for GitHub user ${profile.username}, using fallback: ${email}`);
+        }
 
         let user = await prisma.user.findUnique({ where: { email } });
 
