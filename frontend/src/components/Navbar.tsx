@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { Shield } from 'lucide-react'
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth()
@@ -18,6 +19,12 @@ const Navbar = () => {
                 <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">
                   Dashboard
                 </Link>
+                {user?.isAdmin && (
+                  <Link to="/admin" className="text-purple-600 hover:text-purple-900 flex items-center">
+                    <Shield className="h-4 w-4 mr-1" />
+                    Admin
+                  </Link>
+                )}
                 <span className="text-gray-600">
                   Welcome, {user?.name || user?.email}
                 </span>

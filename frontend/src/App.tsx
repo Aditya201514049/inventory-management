@@ -6,6 +6,7 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
+import Admin from './pages/Admin';
 import ProtectedRoute from './components/ProtectedRoute';
 // Import the new inventory pages
 import InventoriesPage from './pages/inventories';
@@ -35,6 +36,9 @@ function App() {
                   <Route path="/inventories" element={<InventoriesPage />} />
                   <Route path="/inventories/create" element={<CreateInventoryPage />} />
                   <Route path="/inventories/:id" element={<InventoryDetailPage />} />
+                  
+                  {/* Admin Route */}
+                  <Route path="/admin" element={<Admin />} />
                 </Route>
               </Routes>
             </main>
