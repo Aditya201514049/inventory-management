@@ -79,3 +79,29 @@ export const deleteInventory = async (id: string): Promise<void> => {
     throw error;
   }
 };
+
+export const getUserInventories = async (userId?: string): Promise<PaginatedResponse<Inventory>> => {
+  try {
+    const params = userId ? { owner: userId } : {};
+    const response = await api.get('/inventories/my', { params });
+    console.log('getUserInventories raw response:', response.data);
+    
+    // Backend returns { data: [], page, limit, total, totalPages }
+    return {
+      data: response.data.data || [],
+      total: response.data.total || 0,
+      page: response.data.page || 1,
+      limit: response.data.limit || 10,
+      totalPages: response.data.totalPages || 1
+    };
+  } catch (error) {
+    console.error('Error fetching user inventories:', error);
+    return {
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 1
+    };
+  }
+};

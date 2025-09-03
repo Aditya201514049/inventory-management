@@ -91,6 +91,57 @@ router.get('/', async (req, res) => {
   });
 });
 
+// Get current user's inventories - MUST be before the /:id route
+router.get('/my', ensureAuth, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    console.log('DEBUG: Fetching inventories for user ID:', userId);
+    console.log('DEBUG: User object:', (req as any).user);
+    
+    const { page = '1', limit = '20' } = req.query;
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = parseInt(limit as string) || 20;
+    const skip = (pageNum - 1) * limitNum;
+
+    // First, let's check all inventories to see what exists
+    const allInventories = await prisma.inventory.findMany({
+      select: { id: true, title: true, ownerId: true, owner: { select: { id: true, email: true } } }
+    });
+    console.log('DEBUG: All inventories in database:', allInventories);
+
+    const [inventories, total] = await Promise.all([
+      prisma.inventory.findMany({
+        where: { ownerId: userId },
+        skip,
+        take: limitNum,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          owner: { select: { id: true, name: true, email: true } },
+          category: true,
+          _count: {
+            select: { items: true, comments: true }
+          }
+        }
+      }),
+      prisma.inventory.count({ where: { ownerId: userId } })
+    ]);
+
+    console.log('DEBUG: Found inventories for user:', inventories);
+    console.log('DEBUG: Total count:', total);
+
+    res.json({
+      data: inventories,
+      page: pageNum,
+      limit: limitNum,
+      total,
+      totalPages: Math.ceil(total / limitNum)
+    });
+  } catch (error) {
+    console.error('Error fetching user inventories:', error);
+    res.status(500).json({ message: 'Failed to fetch inventories' });
+  }
+});
+
 // Get single inventory (full detail)
 router.get('/:id', async (req, res) => {
   const inventory = await prisma.inventory.findUnique({
@@ -608,5 +659,58 @@ function validateCustomIdParts(parts: any[]): string | null {
 
   return null;
 }
+
+// Get current user's inventories - MUST be before the /:id route
+router.get('/my', ensureAuth, async (req, res) => {
+  try {
+    const userId = (req as any).user.id;
+    const { page = '1', limit = '20' } = req.query;
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = parseInt(limit as string) || 20;
+    const skip = (pageNum - 1) * limitNum;
+
+    const [inventories, total] = await Promise.all([
+      prisma.inventory.findMany({
+        where: { ownerId: userId },
+        include: {
+          owner: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
+          },
+          category: true,
+          _count: {
+            select: {
+              items: true,
+            },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limitNum,
+      }),
+      prisma.inventory.count({
+        where: { ownerId: userId },
+      }),
+    ]);
+
+    const pages = Math.ceil(total / limitNum);
+
+    res.json({
+      inventories,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages,
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching user inventories:', error);
+    res.status(500).json({ message: 'Failed to fetch inventories' });
+  }
+});
 
 export default router;

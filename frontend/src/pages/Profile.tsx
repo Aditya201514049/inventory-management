@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useQuery } from '@tanstack/react-query';
 import { getUsers } from '../services/admin';
+import { getUserInventories } from '../services/inventory';
 import { 
   User, 
   Mail, 
@@ -9,8 +10,7 @@ import {
   Shield, 
   Package, 
   MessageSquare,
-  Settings,
-  Edit3
+  Settings
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -24,6 +24,25 @@ const ProfilePage = () => {
     queryFn: () => getUsers({ search: user?.email }),
     enabled: !!user?.email
   });
+
+  // Get user's inventories
+  const { data: userInventories, error: inventoriesError, isLoading: inventoriesLoading } = useQuery({
+    queryKey: ['user-inventories', user?.id],
+    queryFn: () => getUserInventories(user?.id),
+    enabled: !!user?.id
+  });
+
+  // Debug logging
+  React.useEffect(() => {
+    if (inventoriesError) {
+      console.error('Inventories error:', inventoriesError);
+    }
+    if (userInventories) {
+      console.log('User inventories data:', userInventories);
+    }
+    console.log('Current user:', user);
+    console.log('User ID for query:', user?.id);
+  }, [inventoriesError, userInventories, user]);
 
   const currentUserData = userStats?.users?.[0];
 
@@ -69,10 +88,6 @@ const ProfilePage = () => {
                 </div>
               </div>
             </div>
-            <button className="flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
-              <Edit3 className="h-4 w-4 mr-2" />
-              Edit Profile
-            </button>
           </div>
         </div>
       </div>
@@ -159,11 +174,68 @@ const ProfilePage = () => {
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-6">
             <h3 className="text-lg font-medium text-gray-900 mb-4">My Inventories</h3>
-            <div className="text-center py-8 text-gray-500">
-              <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>Your inventories will be displayed here</p>
-              <p className="text-sm">This feature will be implemented in the next update</p>
-            </div>
+            {inventoriesLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                <p className="mt-2 text-gray-500">Loading inventories...</p>
+              </div>
+            ) : inventoriesError ? (
+              <div className="text-center py-8 text-red-500">
+                <p>Error loading inventories: {inventoriesError.message}</p>
+              </div>
+            ) : userInventories && userInventories.data && userInventories.data.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {userInventories.data.map((inventory) => (
+                  <div key={inventory.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between mb-3">
+                      <h4 className="font-semibold text-gray-900 truncate">{inventory.title}</h4>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        inventory.isPublic 
+                          ? 'bg-green-100 text-green-800' 
+                          : 'bg-gray-100 text-gray-800'
+                      }`}>
+                        {inventory.isPublic ? 'Public' : 'Private'}
+                      </span>
+                    </div>
+                    {inventory.description && (
+                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
+                        {inventory.description}
+                      </p>
+                    )}
+                    <div className="flex items-center justify-between text-sm text-gray-500">
+                      <span>Created {new Date(inventory.createdAt).toLocaleDateString()}</span>
+                      <span className="flex items-center">
+                        <Package className="h-4 w-4 mr-1" />
+                        Items: {(inventory as any)._count?.items || 0}
+                      </span>
+                    </div>
+                    {inventory.tags && inventory.tags.length > 0 && (
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {inventory.tags.slice(0, 3).map((tag, index) => (
+                          <span key={index} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                            {tag}
+                          </span>
+                        ))}
+                        {inventory.tags.length > 3 && (
+                          <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
+                            +{inventory.tags.length - 3} more
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>You haven't created any inventories yet</p>
+                <p className="text-sm">Start by creating your first inventory</p>
+                <div className="mt-4 text-xs text-gray-400">
+                  Debug: {userInventories ? `Data exists, count: ${userInventories.data?.length || 0}` : 'No data'}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
