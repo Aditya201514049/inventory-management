@@ -74,9 +74,20 @@ export const updateInventory = async (id: string, data: UpdateInventoryInput): P
 export const deleteInventory = async (id: string): Promise<void> => {
   try {
     await api.delete(`/inventories/${id}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error(`Error deleting inventory ${id}:`, error);
-    throw error;
+    
+    // Enhanced error handling with user-friendly messages
+    if (error.response?.status === 403) {
+      const message = error.response?.data?.message || 'You do not have permission to delete this inventory';
+      throw new Error(message);
+    } else if (error.response?.status === 404) {
+      throw new Error('Inventory not found');
+    } else if (error.response?.status === 500) {
+      throw new Error('Server error occurred while deleting inventory');
+    } else {
+      throw new Error('Failed to delete inventory. Please try again.');
+    }
   }
 };
 
