@@ -9,14 +9,13 @@ import {
   Calendar, 
   Shield, 
   Package, 
-  MessageSquare,
   Settings
 } from 'lucide-react';
-import toast from 'react-hot-toast';
+
 
 const ProfilePage = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'inventories' | 'activity'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'inventories'>('overview');
 
   // Get user's detailed stats (reusing admin endpoint but filtered for current user)
   const { data: userStats } = useQuery({
@@ -94,38 +93,28 @@ const ProfilePage = () => {
 
       {/* Navigation Tabs */}
       <div className="mb-6">
-        <nav className="flex space-x-8">
+        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'overview'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             Overview
           </button>
           <button
             onClick={() => setActiveTab('inventories')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'inventories'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                ? 'bg-white text-blue-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
             }`}
           >
             My Inventories
           </button>
-          <button
-            onClick={() => setActiveTab('activity')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'activity'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
-          >
-            Recent Activity
-          </button>
-        </nav>
+        </div>
       </div>
 
       {/* Tab Content */}
@@ -146,7 +135,7 @@ const ProfilePage = () => {
 
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center">
-              <MessageSquare className="h-8 w-8 text-green-600" />
+              <Package className="h-8 w-8 text-green-600" />
               <div className="ml-4">
                 <p className="text-sm font-medium text-gray-600">Items Created</p>
                 <p className="text-2xl font-bold text-gray-900">
@@ -240,18 +229,6 @@ const ProfilePage = () => {
         </div>
       )}
 
-      {activeTab === 'activity' && (
-        <div className="bg-white rounded-lg shadow-sm border">
-          <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
-            <div className="text-center py-8 text-gray-500">
-              <MessageSquare className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-              <p>Your recent activity will be displayed here</p>
-              <p className="text-sm">This feature will be implemented in the next update</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Account Settings */}
       <div className="mt-8 bg-white rounded-lg shadow-sm border">
