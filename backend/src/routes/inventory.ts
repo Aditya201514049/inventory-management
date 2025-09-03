@@ -53,11 +53,15 @@ router.get('/', async (req, res) => {
   const where: any = {};
   const user = (req as any).user;
   
-  // Access control: Non-authenticated users only see public inventories
+  // Access control: Enhanced for admin users
   if (!user) {
+    // Non-authenticated users only see public inventories
     where.isPublic = true;
+  } else if (user.isAdmin) {
+    // Admin users see ALL inventories (no filtering)
+    // where remains empty to show everything
   } else {
-    // Authenticated users see public inventories + their own + ones they have access to
+    // Regular authenticated users see public inventories + their own + ones they have access to
     where.OR = [
       { isPublic: true },
       { ownerId: user.id },
@@ -357,9 +361,9 @@ router.put('/:id', ensureAuth, async (req, res) => {
     });
     if (!inv) return res.status(404).json({ message: 'Not found' });
 
-    // Only owner or admin can edit inventory settings
+    // Enhanced access control: Owner or admin can edit inventory settings
     if (inv.ownerId !== user.id && !user.isAdmin) {
-      return res.status(403).json({ message: 'Forbidden' });
+      return res.status(403).json({ message: 'Forbidden: Only inventory owner or admin can edit this inventory' });
     }
 
     // Validate custom ID parts if provided
@@ -444,8 +448,9 @@ router.delete('/:id', ensureAuth, async (req, res) => {
     });
     if (!inv) return res.status(404).json({ message: 'Not found' });
 
+    // Enhanced access control: Owner or admin can delete inventory
     if (inv.ownerId !== user.id && !user.isAdmin) {
-      return res.status(403).json({ message: 'Forbidden' });
+      return res.status(403).json({ message: 'Forbidden: Only inventory owner or admin can delete this inventory' });
     }
 
     await prisma.inventory.delete({ where: { id: req.params.id } });
@@ -684,57 +689,5 @@ function validateCustomIdParts(parts: any[]): string | null {
   return null;
 }
 
-// Get current user's inventories - MUST be before the /:id route
-router.get('/my', ensureAuth, async (req, res) => {
-  try {
-    const userId = (req as any).user.id;
-    const { page = '1', limit = '20' } = req.query;
-    const pageNum = parseInt(page as string) || 1;
-    const limitNum = parseInt(limit as string) || 20;
-    const skip = (pageNum - 1) * limitNum;
-
-    const [inventories, total] = await Promise.all([
-      prisma.inventory.findMany({
-        where: { ownerId: userId },
-        include: {
-          owner: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          },
-          category: true,
-          _count: {
-            select: {
-              items: true,
-            },
-          },
-        },
-        orderBy: { createdAt: 'desc' },
-        skip,
-        take: limitNum,
-      }),
-      prisma.inventory.count({
-        where: { ownerId: userId },
-      }),
-    ]);
-
-    const pages = Math.ceil(total / limitNum);
-
-    res.json({
-      inventories,
-      pagination: {
-        page: pageNum,
-        limit: limitNum,
-        total,
-        pages,
-      },
-    });
-  } catch (error) {
-    console.error('Error fetching user inventories:', error);
-    res.status(500).json({ message: 'Failed to fetch inventories' });
-  }
-});
 
 export default router;
