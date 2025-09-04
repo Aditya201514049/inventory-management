@@ -2,7 +2,10 @@
   "name": "inventory-management-frontend",
   "version": "1.0.0",
   "description": "Frontend for Inventory Management System",
-  "main": "index.js",
+  "engines": {
+    "node": "18.x"
+  },
+  "main": "src/main.tsx",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
