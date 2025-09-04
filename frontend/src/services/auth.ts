@@ -1,8 +1,6 @@
 import api from './api'
 import { User } from './types'
 
-
-
 export const authService = {
   // Get current user
   getCurrentUser: async (): Promise<User | null> => {
@@ -16,12 +14,12 @@ export const authService = {
 
   // Login with Google
   loginWithGoogle: () => {
-    window.location.href = `/auth/google`
+    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/google`
   },
 
   // Login with GitHub
   loginWithGitHub: () => {
-    window.location.href = `/auth/github`
+    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/github`
   },
 
   // Logout
