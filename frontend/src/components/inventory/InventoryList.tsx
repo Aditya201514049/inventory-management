@@ -47,9 +47,9 @@ const InventoryList = () => {
     window.scrollTo(0, 0);
   };
 
-  if (isLoading) return <div>Loading inventories...</div>;
-  if (error) return <div>Error loading inventories: {error.message}</div>;
-  if (!data?.data?.length) return <div>No inventories found</div>;
+  if (isLoading) return <div className="text-gray-600 dark:text-gray-400">Loading inventories...</div>;
+  if (error) return <div className="text-red-600 dark:text-red-400">Error loading inventories: {error.message}</div>;
+  if (!data?.data?.length) return <div className="text-gray-600 dark:text-gray-400">No inventories found</div>;
 
   // Error boundary for rendering
   try {
@@ -63,10 +63,10 @@ const InventoryList = () => {
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Inventories</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Inventories</h2>
         <Link
           to="/inventories/create"
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-colors"
           data-testid="create-inventory-link"
         >
           Create New Inventory
@@ -75,10 +75,10 @@ const InventoryList = () => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {inventories.map((inventory) => (
-          <div key={inventory.id} className="group relative p-4 border rounded-lg hover:shadow-md transition-shadow">
+          <div key={inventory.id} className="group relative p-4 border dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-gray-800">
             <div className="flex justify-between items-start">
               <Link to={`/inventories/${inventory.id}`} className="flex-1">
-                <h3 className="text-lg font-semibold">{inventory.title}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{inventory.title}</h3>
               </Link>
               <button
                 onClick={(e) => {
@@ -87,19 +87,19 @@ const InventoryList = () => {
                   handleDelete(inventory.id);
                 }}
                 disabled={deletingId === inventory.id}
-                className="text-red-500 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Delete inventory"
               >
                 <TrashIcon className="h-5 w-5" />
                 <span className="sr-only">Delete</span>
               </button>
             </div>
-            <p className="text-gray-600 line-clamp-2">{inventory.description}</p>
+            <p className="text-gray-600 dark:text-gray-400 line-clamp-2">{inventory.description}</p>
             <div className="mt-2 flex flex-wrap gap-1">
               {inventory.tags?.map((tag) => (
                 <span
                   key={tag}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300"
                 >
                   {tag}
                 </span>
@@ -112,14 +112,14 @@ const InventoryList = () => {
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             Showing {inventories.length} of {total} items
           </div>
           <div className="flex items-center gap-2">
             <button
               disabled={currentPage === 1}
               onClick={() => handlePageChange(currentPage - 1)}
-              className="px-3 py-1 border rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 border dark:border-gray-700 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
               aria-label="Previous page"
             >
               Previous
@@ -169,7 +169,7 @@ const InventoryList = () => {
                 return pageNumbers.map((pageNumber, index) => {
                   if (pageNumber === '...') {
                     return (
-                      <span key={`ellipsis-${index}`} className="px-2">
+                      <span key={`ellipsis-${index}`} className="px-2 text-gray-500 dark:text-gray-400">
                         {pageNumber}
                       </span>
                     );
@@ -182,7 +182,7 @@ const InventoryList = () => {
                       className={`w-8 h-8 rounded-md text-sm ${
                         currentPage === pageNumber
                           ? 'bg-blue-600 text-white'
-                          : 'hover:bg-gray-100'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white'
                       }`}
                       aria-current={currentPage === pageNumber ? 'page' : undefined}
                     >
@@ -196,14 +196,14 @@ const InventoryList = () => {
             <button
               disabled={currentPage >= totalPages}
               onClick={() => handlePageChange(currentPage + 1)}
-              className="px-3 py-1 border rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1 border dark:border-gray-700 rounded-md text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700"
               aria-label="Next page"
             >
               Next
             </button>
           </div>
           
-          <div className="text-sm text-gray-600">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             Page {currentPage} of {totalPages}
           </div>
         </div>

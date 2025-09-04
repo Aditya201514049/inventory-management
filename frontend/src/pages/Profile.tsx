@@ -9,7 +9,8 @@ import {
   Mail, 
   Calendar, 
   Shield, 
-  Package
+  Package,
+  BarChart3
 } from 'lucide-react';
 
 
@@ -58,7 +59,6 @@ const ProfilePage = () => {
     console.log('Is admin:', user?.isAdmin);
   }, [inventoriesError, userInventories, user, userStats]);
 
-  const currentUserData = userStats?.users?.[0];
 
   if (!user) {
     return (
@@ -73,7 +73,7 @@ const ProfilePage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Profile Header */}
-      <div className="bg-white rounded-lg shadow-sm border mb-8">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 mb-8">
         <div className="p-6">
           <div className="flex items-start justify-between">
             <div className="flex items-center space-x-4">
@@ -81,20 +81,20 @@ const ProfilePage = () => {
                 <User className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
                   {user.name || 'No name set'}
                 </h1>
-                <div className="flex items-center text-gray-600 mt-1">
+                <div className="flex items-center text-gray-600 dark:text-gray-400 mt-1">
                   <Mail className="h-4 w-4 mr-2" />
                   {user.email}
                 </div>
                 <div className="flex items-center space-x-4 mt-2">
-                  <div className="flex items-center text-sm text-gray-500">
+                  <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
                     <Calendar className="h-4 w-4 mr-1" />
                     Joined {new Date(user.createdAt).toLocaleDateString()}
                   </div>
                   {user.isAdmin && (
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300">
                       <Shield className="w-3 h-3 mr-1" />
                       Admin
                     </span>
@@ -108,13 +108,13 @@ const ProfilePage = () => {
 
       {/* Navigation Tabs */}
       <div className="mb-6">
-        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+        <div className="flex space-x-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
           <button
             onClick={() => setActiveTab('overview')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'overview'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
             Overview
@@ -123,8 +123,8 @@ const ProfilePage = () => {
             onClick={() => setActiveTab('inventories')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'inventories'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             }`}
           >
             My Inventories
@@ -135,27 +135,31 @@ const ProfilePage = () => {
       {/* Tab Content */}
       {activeTab === 'overview' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Stats Cards */}
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <Package className="h-8 w-8 text-blue-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">My Inventories</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {currentUserData?._count?.inventories || 0}
+          {/* Statistics Cards */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Inventories</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {userInventories?.data?.length || 0}
                 </p>
+              </div>
+              <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                <Package className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <Package className="h-8 w-8 text-green-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Items Created</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {currentUserData?._count?.items || 0}
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Items</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                  {userInventories?.data?.reduce((acc, inv) => acc + ((inv as any)._count?.items || 0), 0) || 0}
                 </p>
+              </div>
+              <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center">
+                <BarChart3 className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
             </div>
           </div>
@@ -163,69 +167,46 @@ const ProfilePage = () => {
       )}
 
       {activeTab === 'inventories' && (
-        <div className="bg-white rounded-lg shadow-sm border">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
           <div className="p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">My Inventories</h3>
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">My Inventories</h3>
             {inventoriesLoading ? (
               <div className="text-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                <p className="mt-2 text-gray-500">Loading inventories...</p>
+                <p className="mt-2 text-gray-500 dark:text-gray-400">Loading inventories...</p>
               </div>
             ) : inventoriesError ? (
-              <div className="text-center py-8 text-red-500">
+              <div className="text-center py-8 text-red-500 dark:text-red-400">
                 <p>Error loading inventories: {inventoriesError.message}</p>
               </div>
             ) : userInventories && userInventories.data && userInventories.data.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {userInventories.data.map((inventory) => (
-                  <div key={inventory.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div key={inventory.id} className="border dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800">
                     <div className="flex items-start justify-between mb-3">
-                      <h4 className="font-semibold text-gray-900 truncate">{inventory.title}</h4>
+                      <h4 className="font-semibold text-gray-900 dark:text-white truncate">{inventory.title}</h4>
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         inventory.isPublic 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-gray-100 text-gray-800'
+                          ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' 
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                       }`}>
                         {inventory.isPublic ? 'Public' : 'Private'}
                       </span>
                     </div>
                     {inventory.description && (
-                      <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                        {inventory.description}
-                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3 line-clamp-2">{inventory.description}</p>
                     )}
-                    <div className="flex items-center justify-between text-sm text-gray-500">
-                      <span>Created {new Date(inventory.createdAt).toLocaleDateString()}</span>
-                      <span className="flex items-center">
-                        <Package className="h-4 w-4 mr-1" />
-                        Items: {(inventory as any)._count?.items || 0}
-                      </span>
+                    <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
+                      <span>{((inventory as any)._count?.items || 0)} items</span>
+                      <span>{new Date(inventory.createdAt).toLocaleDateString()}</span>
                     </div>
-                    {inventory.tags && inventory.tags.length > 0 && (
-                      <div className="mt-3 flex flex-wrap gap-1">
-                        {inventory.tags.slice(0, 3).map((tag, index) => (
-                          <span key={index} className="px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                            {tag}
-                          </span>
-                        ))}
-                        {inventory.tags.length > 3 && (
-                          <span className="px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded">
-                            +{inventory.tags.length - 3} more
-                          </span>
-                        )}
-                      </div>
-                    )}
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>You haven't created any inventories yet</p>
-                <p className="text-sm">Start by creating your first inventory</p>
-                <div className="mt-4 text-xs text-gray-400">
-                  Debug: {userInventories ? `Data exists, count: ${userInventories.data?.length || 0}` : 'No data'}
-                </div>
+              <div className="text-center py-8">
+                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400">No inventories found</p>
               </div>
             )}
           </div>
@@ -234,39 +215,39 @@ const ProfilePage = () => {
 
 
       {/* Account Settings */}
-      <div className="mt-8 bg-white rounded-lg shadow-sm border">
+      <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
         <div className="p-6">
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Account Information</h3>
+          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Account Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Full Name
               </label>
-              <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">
+              <div className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                 {user.name || 'Not set'}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Email Address
               </label>
-              <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">
+              <div className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                 {user.email}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Account Type
               </label>
-              <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">
+              <div className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                 {user.isAdmin ? 'Administrator' : 'Regular User'}
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Member Since
               </label>
-              <div className="text-sm text-gray-900 bg-gray-50 p-3 rounded-md">
+              <div className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-md">
                 {new Date(user.createdAt).toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',

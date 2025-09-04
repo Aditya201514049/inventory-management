@@ -164,59 +164,59 @@ const AdminPage = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-        <p className="text-gray-600">Manage users, permissions, and system overview</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Admin Dashboard</h1>
+        <p className="text-gray-600 dark:text-gray-400">Manage users, permissions, and system overview</p>
       </div>
 
       {/* Statistics Cards */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border dark:border-gray-700">
             <div className="flex items-center">
-              <Users className="h-8 w-8 text-blue-600" />
+              <Users className="h-8 w-8 text-blue-600 dark:text-blue-400" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Users</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Users</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalUsers}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border dark:border-gray-700">
             <div className="flex items-center">
-              <Shield className="h-8 w-8 text-purple-600" />
+              <Shield className="h-8 w-8 text-purple-600 dark:text-purple-400" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Admins</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalAdmins}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Admins</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalAdmins}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border dark:border-gray-700">
             <div className="flex items-center">
-              <Package className="h-8 w-8 text-green-600" />
+              <Package className="h-8 w-8 text-green-600 dark:text-green-400" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Inventories</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalInventories}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Inventories</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalInventories}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border dark:border-gray-700">
             <div className="flex items-center">
-              <MessageSquare className="h-8 w-8 text-orange-600" />
+              <MessageSquare className="h-8 w-8 text-orange-600 dark:text-orange-400" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Items</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalItems}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Items</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalItems}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border dark:border-gray-700">
             <div className="flex items-center">
-              <Ban className="h-8 w-8 text-red-600" />
+              <Ban className="h-8 w-8 text-red-600 dark:text-red-400" />
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Blocked</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.blockedUsers}</p>
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Blocked</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.blockedUsers}</p>
               </div>
             </div>
           </div>
@@ -224,27 +224,27 @@ const AdminPage = () => {
       )}
 
       {/* User Management */}
-      <div className="bg-white rounded-lg shadow-sm border">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">User Management</h2>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
+        <div className="p-6 border-b dark:border-gray-700">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">User Management</h2>
           
           {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
               <input
                 type="text"
                 placeholder="Search users by name or email..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
             
             <select
               value={filterBlocked === undefined ? '' : filterBlocked.toString()}
               onChange={(e) => setFilterBlocked(e.target.value === '' ? undefined : e.target.value === 'true')}
-              className="px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Users</option>
               <option value="false">Active Users</option>
@@ -256,50 +256,50 @@ const AdminPage = () => {
         {/* Users Table */}
         <div className="overflow-x-auto">
           {usersLoading ? (
-            <div className="flex justify-center py-8">Loading users...</div>
+            <div className="flex justify-center py-8 text-gray-600 dark:text-gray-400">Loading users...</div>
           ) : usersError ? (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 m-4">
-              <p className="text-red-700">Failed to load users: {usersError?.message || 'Unknown error'}</p>
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 m-4">
+              <p className="text-red-700 dark:text-red-400">Failed to load users: {usersError?.message || 'Unknown error'}</p>
             </div>
           ) : !usersData || !('users' in usersData) || !usersData.users?.length ? (
-            <div className="text-center py-8 text-gray-500">No users found</div>
+            <div className="text-center py-8 text-gray-500 dark:text-gray-400">No users found</div>
           ) : (
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 dark:bg-gray-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     User
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Role
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Activity
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                 {usersData?.users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
+                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
                           {user.name || 'No name'}
                         </div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">{user.email}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         user.isAdmin 
-                          ? 'bg-purple-100 text-purple-800' 
-                          : 'bg-gray-100 text-gray-800'
+                          ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300' 
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
                       }`}>
                         {user.isAdmin ? (
                           <>
@@ -317,13 +317,13 @@ const AdminPage = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         user.blocked 
-                          ? 'bg-red-100 text-red-800' 
-                          : 'bg-green-100 text-green-800'
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' 
+                          : 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
                       }`}>
                         {user.blocked ? 'Blocked' : 'Active'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       <div>
                         {user._count.inventories} inventories, {user._count.items} items
                       </div>
