@@ -73,8 +73,8 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
     setEditingItem(null);
   };
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error loading items</div>;
+  if (isLoading) return <div className="text-gray-600 dark:text-gray-400">Loading...</div>;
+  if (error) return <div className="text-red-600 dark:text-red-400">Error loading items</div>;
 
   const { items, inventory, pagination } = data;
   const fields = inventory?.fields || [];
@@ -89,7 +89,7 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
             placeholder="Search items..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-2 border rounded-md"
+            className="px-3 py-2 border dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
           />
         </div>
         
@@ -98,14 +98,14 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
             <button
               onClick={handleDelete}
               disabled={deleteMutation.isPending}
-              className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              className="px-3 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 transition-colors"
             >
               Delete ({selectedItems.length})
             </button>
           )}
           <button
             onClick={handleAddItem}
-            className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            className="px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
           >
             Add Item
           </button>
@@ -114,51 +114,51 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
 
       {/* Items Table */}
       <div className="overflow-x-auto">
-        <table className="min-w-full bg-white border border-gray-200">
-          <thead className="bg-gray-50">
+        <table className="min-w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+          <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
               <th className="px-4 py-2 text-left">
                 <input
                   type="checkbox"
                   checked={selectedItems.length === items.length && items.length > 0}
                   onChange={handleSelectAll}
-                  className="rounded"
+                  className="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
                 />
               </th>
-              <th className="px-4 py-2 text-left font-medium text-gray-700">Custom ID</th>
+              <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Custom ID</th>
               {fields.map((field: Field) => (
-                <th key={field.id} className="px-4 py-2 text-left font-medium text-gray-700">
+                <th key={field.id} className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-300">
                   {field.title}
                 </th>
               ))}
-              <th className="px-4 py-2 text-left font-medium text-gray-700">Created</th>
-              <th className="px-4 py-2 text-left font-medium text-gray-700">Actions</th>
+              <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Created</th>
+              <th className="px-4 py-2 text-left font-medium text-gray-700 dark:text-gray-300">Actions</th>
             </tr>
           </thead>
           <tbody>
             {items.map((item: any) => (
-              <tr key={item.id} className="border-t hover:bg-gray-50">
+              <tr key={item.id} className="border-t dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
                 <td className="px-4 py-2">
                   <input
                     type="checkbox"
                     checked={selectedItems.includes(item.id)}
                     onChange={() => handleSelectItem(item.id)}
-                    className="rounded"
+                    className="rounded border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
                   />
                 </td>
-                <td className="px-4 py-2 font-mono">{item.customId}</td>
+                <td className="px-4 py-2 font-mono text-gray-900 dark:text-white">{item.customId}</td>
                 {fields.map((field: Field) => (
-                  <td key={field.id} className="px-4 py-2">
+                  <td key={field.id} className="px-4 py-2 text-gray-900 dark:text-white">
                     {item.values[field.name]?.toString() || '-'}
                   </td>
                 ))}
-                <td className="px-4 py-2 text-sm text-gray-500">
+                <td className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
                   {new Date(item.createdAt).toLocaleDateString()}
                 </td>
                 <td className="px-4 py-2">
                   <button
                     onClick={() => handleEditItem(item)}
-                    className="px-2 py-1 text-sm bg-blue-100 text-blue-700 rounded hover:bg-blue-200"
+                    className="px-2 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors"
                   >
                     Edit
                   </button>
@@ -175,17 +175,17 @@ export default function ItemsTab({ inventoryId }: { inventoryId: string }) {
           <button
             onClick={() => setPage(p => Math.max(1, p - 1))}
             disabled={page === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-3 py-1 border dark:border-gray-600 rounded disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
             Previous
           </button>
-          <span className="px-3 py-1">
+          <span className="px-3 py-1 text-gray-900 dark:text-white">
             Page {pagination.page} of {pagination.pages}
           </span>
           <button
             onClick={() => setPage(p => Math.min(pagination.pages, p + 1))}
             disabled={page === pagination.pages}
-            className="px-3 py-1 border rounded disabled:opacity-50"
+            className="px-3 py-1 border dark:border-gray-600 rounded disabled:opacity-50 bg-white dark:bg-gray-700 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
           >
             Next
           </button>

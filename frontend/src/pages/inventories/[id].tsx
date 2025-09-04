@@ -19,15 +19,15 @@ const InventoryDetailPage = () => {
     enabled: !!id
   });
 
-  if (isLoading) return <div>Loading...</div>;
-  if (error) return <div>Error loading inventory</div>;
-  if (!inventory) return <div>Inventory not found</div>;
+  if (isLoading) return <div className="text-gray-600 dark:text-gray-400">Loading...</div>;
+  if (error) return <div className="text-red-600 dark:text-red-400">Error loading inventory</div>;
+  if (!inventory) return <div className="text-gray-600 dark:text-gray-400">Inventory not found</div>;
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">{inventory.title}</h1>
-        <button type="button" onClick={() => navigate('/inventories')} className="px-4 py-2 border rounded-md">Back to List</button>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{inventory.title}</h1>
+        <button type="button" onClick={() => navigate('/inventories')} className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors">Back to List</button>
       </div>
 
       <InventoryTabs

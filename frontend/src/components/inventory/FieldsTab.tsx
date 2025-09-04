@@ -70,59 +70,59 @@ export default function FieldsTab({ inventoryId }: FieldsTabProps) {
     return getFieldTypeCount(type) < 3;
   };
 
-  if (isLoading) return <div>Loading fields...</div>;
-  if (error) return <div className="text-red-600">Failed to load fields</div>;
+  if (isLoading) return <div className="text-gray-600 dark:text-gray-400">Loading fields...</div>;
+  if (error) return <div className="text-red-600 dark:text-red-400">Failed to load fields</div>;
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-semibold">Fields</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Fields</h3>
         <button
           onClick={handleAdd}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
           Add Field
         </button>
       </div>
 
       {fields.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">
+        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
           <p>No fields defined yet.</p>
           <p className="text-sm">Add fields to define what data your items will store.</p>
         </div>
       ) : (
         <div className="space-y-2">
           {fields.map((field: Field) => (
-            <div key={field.id} className="flex items-center justify-between p-4 border rounded-lg">
+            <div key={field.id} className="flex items-center justify-between p-4 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">{field.title}</span>
-                  <span className="text-xs bg-gray-100 px-2 py-1 rounded">
+                  <span className="font-medium text-gray-900 dark:text-white">{field.title}</span>
+                  <span className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300 px-2 py-1 rounded">
                     {field.type}
                   </span>
                   {!field.visible && (
-                    <span className="text-xs bg-yellow-100 px-2 py-1 rounded">
+                    <span className="text-xs bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 px-2 py-1 rounded">
                       Hidden
                     </span>
                   )}
                 </div>
                 {field.description && (
-                  <p className="text-sm text-gray-600 mt-1">{field.description}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{field.description}</p>
                 )}
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                   Field name: {field.name}
                 </p>
               </div>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => handleEdit(field)}
-                  className="px-3 py-1 text-sm border rounded hover:bg-gray-50"
+                  className="px-3 py-1 text-sm border dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(field.id)}
-                  className="px-3 py-1 text-sm border rounded hover:bg-gray-50 text-red-600"
+                  className="px-3 py-1 text-sm border dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 transition-colors"
                 >
                   Delete
                 </button>

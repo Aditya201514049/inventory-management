@@ -93,21 +93,21 @@ const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
   });
 
   if (isLoading) {
-    return <div className="flex justify-center py-8">Loading access settings...</div>;
+    return <div className="flex justify-center py-8 text-gray-600 dark:text-gray-400">Loading access settings...</div>;
   }
 
   return (
     <div className="space-y-6">
       {/* Public/Private Toggle */}
-      <div className="bg-white p-6 rounded-lg border">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            {isPublic ? <Unlock className="h-5 w-5 text-green-600" /> : <Lock className="h-5 w-5 text-gray-600" />}
+            {isPublic ? <Unlock className="h-5 w-5 text-green-600 dark:text-green-400" /> : <Lock className="h-5 w-5 text-gray-600 dark:text-gray-400" />}
             <div>
-              <h3 className="text-lg font-medium">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                 {isPublic ? 'Public Inventory' : 'Private Inventory'}
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 {isPublic 
                   ? 'Any authenticated user can add and edit items'
                   : 'Only users with explicit access can add and edit items'
@@ -118,11 +118,11 @@ const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
           <button
             onClick={handleTogglePublic}
             disabled={togglePublicMutation.isPending}
-            className={`px-4 py-2 rounded-md font-medium transition-colors ${
+            className={`px-4 py-2 rounded-md font-medium transition-colors disabled:opacity-50 ${
               isPublic
-                ? 'bg-green-100 text-green-800 hover:bg-green-200'
-                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-            } disabled:opacity-50`}
+                ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-900/50'
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-600'
+            }`}
           >
             {togglePublicMutation.isPending ? 'Updating...' : (isPublic ? 'Make Private' : 'Make Public')}
           </button>
@@ -131,15 +131,15 @@ const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
 
       {/* User Access Management */}
       {!isPublic && (
-        <div className="bg-white p-6 rounded-lg border">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
           <div className="flex items-center space-x-2 mb-4">
-            <Users className="h-5 w-5 text-gray-600" />
-            <h3 className="text-lg font-medium">User Access</h3>
+            <Users className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">User Access</h3>
           </div>
 
           {/* Add User */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Add User by Name or Email
             </label>
             <UserAutocomplete
@@ -151,23 +151,23 @@ const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
 
           {/* Sort Controls */}
           <div className="flex items-center space-x-4 mb-4">
-            <span className="text-sm font-medium text-gray-700">Sort by:</span>
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by:</span>
             <button
               onClick={() => setSortBy('name')}
-              className={`px-3 py-1 rounded text-sm ${
+              className={`px-3 py-1 rounded text-sm transition-colors ${
                 sortBy === 'name'
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               Name
             </button>
             <button
               onClick={() => setSortBy('email')}
-              className={`px-3 py-1 rounded text-sm ${
+              className={`px-3 py-1 rounded text-sm transition-colors ${
                 sortBy === 'email'
-                  ? 'bg-blue-100 text-blue-800'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
               }`}
             >
               Email
@@ -177,27 +177,27 @@ const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
           {/* Access List */}
           <div className="space-y-2">
             {sortedAccessList.length === 0 ? (
-              <p className="text-gray-500 text-center py-4">
+              <p className="text-gray-500 dark:text-gray-400 text-center py-4">
                 No users have access to this inventory
               </p>
             ) : (
               sortedAccessList.map((access) => (
                 <div
                   key={access.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
                 >
                   <div>
-                    <div className="font-medium text-gray-900">
+                    <div className="font-medium text-gray-900 dark:text-white">
                       {access.user.name || 'No name'}
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
                       {access.user.email}
                     </div>
                   </div>
                   <button
                     onClick={() => handleRemoveUser(access.userId)}
                     disabled={removeUserMutation.isPending}
-                    className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors disabled:opacity-50"
+                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors disabled:opacity-50"
                     title="Remove access"
                   >
                     <Trash2 className="h-4 w-4" />
