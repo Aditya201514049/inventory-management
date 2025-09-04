@@ -9,8 +9,7 @@ import {
   Mail, 
   Calendar, 
   Shield, 
-  Package, 
-  Settings
+  Package
 } from 'lucide-react';
 
 
