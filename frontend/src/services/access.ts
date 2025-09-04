@@ -17,13 +17,13 @@ export interface UpdateInventoryAccessData {
 
 // Get inventory access list
 export const getInventoryAccess = async (inventoryId: string): Promise<AccessUser[]> => {
-  const response = await api.get(`/api/access/inventory/${inventoryId}`);
+  const response = await api.get(`/access/inventory/${inventoryId}`);
   return response.data;
 };
 
 // Add user access to inventory
 export const addUserAccess = async (inventoryId: string, userId: string): Promise<void> => {
-  await api.post(`/api/access/inventory/${inventoryId}/users`, {
+  await api.post(`/access/inventory/${inventoryId}/users`, {
     userId,
     canWrite: true
   });
@@ -31,7 +31,7 @@ export const addUserAccess = async (inventoryId: string, userId: string): Promis
 
 // Remove user access from inventory
 export const removeUserAccess = async (inventoryId: string, userId: string): Promise<void> => {
-  await api.delete(`/api/access/inventory/${inventoryId}/users/${userId}`);
+  await api.delete(`/access/inventory/${inventoryId}/users/${userId}`);
 };
 
 // Update inventory access settings (public/private)

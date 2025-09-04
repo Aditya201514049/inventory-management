@@ -8,6 +8,6 @@ export interface UserSearchResult {
 
 // Search users by name or email
 export const searchUsers = async (query: string): Promise<UserSearchResult[]> => {
-  const response = await api.get(`/api/users/search?q=${encodeURIComponent(query)}`);
+  const response = await api.get(`/access/users/search?query=${encodeURIComponent(query)}`);
   return response.data;
 };
