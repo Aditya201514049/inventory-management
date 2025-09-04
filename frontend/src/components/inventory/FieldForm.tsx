@@ -61,16 +61,16 @@ export default function FieldForm({ field, onClose, onSave, canAddFieldType }: F
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto border dark:border-gray-700">
         <div className="p-6">
-          <h2 className="text-xl font-bold mb-4">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
             {isEditing ? 'Edit Field' : 'Add New Field'}
           </h2>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Field Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Field Name <span className="text-red-500">*</span>
               </label>
               <input
@@ -83,19 +83,19 @@ export default function FieldForm({ field, onClose, onSave, canAddFieldType }: F
                   }
                 })}
                 placeholder="e.g., model, price, purchase_date"
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
               />
               {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
             </div>
 
             {/* Field Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Field Type <span className="text-red-500">*</span>
               </label>
               <select
                 {...register('type', { required: 'Field type is required' })}
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
               >
                 {FIELD_TYPES.map((type) => (
                   <option key={type.value} value={type.value} disabled={!canAddFieldType(type.value)}>
@@ -103,33 +103,33 @@ export default function FieldForm({ field, onClose, onSave, canAddFieldType }: F
                   </option>
                 ))}
               </select>
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 {FIELD_TYPES.find(t => t.value === selectedType)?.description}
               </p>
             </div>
 
             {/* Field Title */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Display Title <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 {...register('title', { required: 'Display title is required' })}
                 placeholder="e.g., Model, Price, Purchase Date"
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
               />
               {errors.title && <p className="text-red-500 text-sm mt-1">{errors.title.message}</p>}
             </div>
 
             {/* Description */}
             <div>
-              <label className="block text-sm font-medium text-gray-700">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Description</label>
               <textarea
                 rows={2}
                 {...register('description')}
                 placeholder="Optional description for this field"
-                className="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                className="mt-1 block w-full border border-gray-300 dark:border-gray-600 rounded-md px-3 py-2 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-blue-500 focus:border-blue-500"
               />
             </div>
 
@@ -139,9 +139,9 @@ export default function FieldForm({ field, onClose, onSave, canAddFieldType }: F
                 <input
                   type="checkbox"
                   {...register('visible')}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 bg-white dark:bg-gray-700"
                 />
-                <span className="ml-2 text-sm text-gray-700">Show in item list</span>
+                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Show in item list</span>
               </label>
             </div>
 
@@ -150,9 +150,9 @@ export default function FieldForm({ field, onClose, onSave, canAddFieldType }: F
                 <input
                   type="checkbox"
                   {...register('required')}
-                  className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                  className="h-4 w-4 text-blue-600 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 bg-white dark:bg-gray-700"
                 />
-                <span className="ml-2 text-sm text-gray-700">Required field</span>
+                <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">Required field</span>
               </label>
             </div>
 
@@ -160,13 +160,13 @@ export default function FieldForm({ field, onClose, onSave, canAddFieldType }: F
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
               >
                 {isEditing ? 'Update' : 'Create'}
               </button>
