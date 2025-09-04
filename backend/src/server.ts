@@ -56,6 +56,23 @@ app.use('/api/users', userRouter);
 app.use('/api/fields', fieldRouter);
 app.use('/api/profile', profileRouter);
 
+// Root route - shows backend is running
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Inventory Management Backend is running!',
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      auth: '/auth',
+      inventories: '/api/inventories',
+      items: '/api/item',
+      users: '/api/users'
+    }
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
 });
