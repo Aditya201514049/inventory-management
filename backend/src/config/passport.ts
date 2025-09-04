@@ -60,7 +60,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
       clientSecret: process.env.GITHUB_CLIENT_SECRET,
       callbackURL: `${process.env.BACKEND_URL || "http://localhost:4000"}/auth/github/callback`, // update port if needed
     },
-    async (_accessToken, _refreshToken, profile, done) => {
+    async (_accessToken: string, _refreshToken: string, profile: any, done: any) => {
       try {
         let email = profile.emails?.[0]?.value;
         
