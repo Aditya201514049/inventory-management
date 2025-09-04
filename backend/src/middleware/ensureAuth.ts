@@ -10,5 +10,5 @@ export function ensureAuth(req: Request, res: Response, next: NextFunction) {
     return res.status(401).json({ message: 'Authentication required' });
   }
   
-  res.redirect("/login");
+  res.redirect(`${process.env.FRONTEND_URL}/login`);
 }
