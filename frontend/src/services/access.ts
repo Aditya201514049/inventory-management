@@ -23,7 +23,7 @@ export const getInventoryAccess = async (inventoryId: string): Promise<AccessUse
 
 // Add user access to inventory
 export const addUserAccess = async (inventoryId: string, userId: string): Promise<void> => {
-  await api.post(`/access/inventory/${inventoryId}/users`, {
+  await api.post(`/access/inventory/${inventoryId}`, {
     userId,
     canWrite: true
   });
@@ -31,7 +31,7 @@ export const addUserAccess = async (inventoryId: string, userId: string): Promis
 
 // Remove user access from inventory
 export const removeUserAccess = async (inventoryId: string, userId: string): Promise<void> => {
-  await api.delete(`/access/inventory/${inventoryId}/users/${userId}`);
+  await api.delete(`/access/inventory/${inventoryId}/user/${userId}`);
 };
 
 // Update inventory access settings (public/private)
