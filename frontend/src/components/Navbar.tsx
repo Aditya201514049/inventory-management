@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { Shield } from 'lucide-react'
+import { Shield, LogOut } from 'lucide-react'
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth()
@@ -36,9 +36,10 @@ const Navbar = () => {
                 </Link>
                 <button 
                   onClick={logout}
-                  className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700"
+                  className="bg-red-600 text-white px-3 py-2 rounded-md hover:bg-red-700 flex items-center"
+                  title="Logout"
                 >
-                  Logout
+                  <LogOut className="h-4 w-4" />
                 </button>
               </>
             ) : (
