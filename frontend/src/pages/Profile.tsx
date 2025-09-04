@@ -135,7 +135,7 @@ const ProfilePage = () => {
 
       {/* Tab Content */}
       {activeTab === 'overview' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Stats Cards */}
           <div className="bg-white p-6 rounded-lg shadow-sm border">
             <div className="flex items-center">
@@ -156,18 +156,6 @@ const ProfilePage = () => {
                 <p className="text-sm font-medium text-gray-600">Items Created</p>
                 <p className="text-2xl font-bold text-gray-900">
                   {currentUserData?._count?.items || 0}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
-            <div className="flex items-center">
-              <Settings className="h-8 w-8 text-purple-600" />
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Comments</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {currentUserData?._count?.comments || 0}
                 </p>
               </div>
             </div>
