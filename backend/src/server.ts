@@ -21,6 +21,23 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Content Security Policy for OAuth - only in production
+if (process.env.NODE_ENV === 'production') {
+  app.use((req, res, next) => {
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; " +
+      "script-src 'self' 'unsafe-inline' https://accounts.google.com https://apis.google.com; " +
+      "style-src 'self' 'unsafe-inline' https://accounts.google.com; " +
+      "img-src 'self' data: https:; " +
+      "connect-src 'self' https://accounts.google.com https://api.github.com; " +
+      "frame-src 'self' https://accounts.google.com; " +
+      "form-action 'self' https://accounts.google.com https://github.com;"
+    );
+    next();
+  });
+}
+
 app.use(cors({
   origin: FRONTEND_URL, // Use environment variable instead of hardcoded URL
   credentials: true, // Important for cookies/sessions
