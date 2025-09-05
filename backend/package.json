@@ -12,7 +12,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@prisma/client": "^6.14.0",
+    "@prisma/client": "^6.15.0",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.7.0",
     "cors": "^2.8.5",
@@ -34,7 +34,6 @@
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
-    "prisma": "^6.14.0",
     "socket.io": "^4.8.1",
     "zod": "^4.0.17"
   },
@@ -60,6 +59,7 @@
     "@typescript-eslint/parser": "^8.40.0",
     "eslint": "^9.33.0",
     "prettier": "^3.6.2",
+    "prisma": "^6.15.0",
     "tsx": "^4.20.4",
     "typescript": "^5.9.2"
   }
