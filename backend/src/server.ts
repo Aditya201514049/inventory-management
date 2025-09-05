@@ -37,7 +37,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production', // Use NODE_ENV from .env file
     httpOnly: true,
-    sameSite: 'none', // Required for OAuth redirects to work across domains
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Use 'none' only in production with HTTPS
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
