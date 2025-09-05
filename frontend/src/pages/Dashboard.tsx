@@ -9,18 +9,17 @@ import { authService } from '../services/auth'
 const Dashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, checkAuth } = useAuth();
+  const { user } = useAuth();
 
   // Handle OAuth callback with JWT token
   useEffect(() => {
     const token = searchParams.get('token');
     if (token) {
       authService.handleOAuthCallback(token);
-      checkAuth(); // Refresh user data
-    } else {
-      checkAuth(); // Normal auth check
+      // Force page reload to let AuthContext initialize properly
+      window.location.replace('/dashboard');
     }
-  }, [searchParams, checkAuth]);
+  }, [searchParams]);
 
   // Get user's inventories for dashboard stats
   const { data: inventoriesData } = useQuery({

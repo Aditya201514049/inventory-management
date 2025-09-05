@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
 import { User } from '../services/types'
 import { authService } from '../services/auth'
 
@@ -27,10 +27,13 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [initialized, setInitialized] = useState(false)
 
   const checkAuth = useCallback(async () => {
-    setLoading(true)
+    if (!initialized) {
+      setLoading(true)
+    }
     try {
       const currentUser = await authService.getCurrentUser()
       setUser(currentUser)
@@ -38,7 +41,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null)
     } finally {
       setLoading(false)
+      if (!initialized) {
+        setInitialized(true)
+      }
     }
+  }, [initialized])
+
+  useEffect(() => {
+    checkAuth()
   }, [])
 
   const login = (provider: 'google' | 'github') => {
