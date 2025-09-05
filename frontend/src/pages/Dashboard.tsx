@@ -10,16 +10,26 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
+  const { checkAuth } = useAuth(); 
 
   // Handle OAuth callback with JWT token
+  
   useEffect(() => {
     const token = searchParams.get('token');
     if (token) {
+      console.log('Handling OAuth callback with token');
       authService.handleOAuthCallback(token);
-      // Force page reload to let AuthContext initialize properly
-      window.location.replace('/dashboard');
+      
+      // Refresh AuthContext to recognize the new token
+      checkAuth().then(() => {
+        console.log('Auth state refreshed');
+        // Clean URL without full page reload
+        navigate('/dashboard', { replace: true });
+      });
     }
-  }, [searchParams]);
+  }, [searchParams, checkAuth, navigate]);
+
+
 
   // Get user's inventories for dashboard stats
   const { data: inventoriesData } = useQuery({
