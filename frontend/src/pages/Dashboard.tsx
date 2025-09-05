@@ -1,18 +1,26 @@
 import { Plus, Package, BarChart3, TrendingUp, Eye, Users, Calendar, ArrowRight } from 'lucide-react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { getInventories } from '../services/inventory'
 import { useEffect } from 'react'
+import { authService } from '../services/auth'
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, checkAuth } = useAuth();
 
-  // Check authentication status when component mounts (important for OAuth redirects)
+  // Handle OAuth callback with JWT token
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    const token = searchParams.get('token');
+    if (token) {
+      authService.handleOAuthCallback(token);
+      checkAuth(); // Refresh user data
+    } else {
+      checkAuth(); // Normal auth check
+    }
+  }, [searchParams, checkAuth]);
 
   // Get user's inventories for dashboard stats
   const { data: inventoriesData } = useQuery({

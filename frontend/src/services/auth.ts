@@ -2,12 +2,32 @@ import api from './api'
 import { User } from './types'
 
 export const authService = {
+  // Get JWT token from localStorage
+  getToken: (): string | null => {
+    return localStorage.getItem('jwt_token')
+  },
+
+  // Set JWT token in localStorage
+  setToken: (token: string): void => {
+    localStorage.setItem('jwt_token', token)
+  },
+
+  // Remove JWT token from localStorage
+  removeToken: (): void => {
+    localStorage.removeItem('jwt_token')
+  },
+
   // Get current user
   getCurrentUser: async (): Promise<User | null> => {
     try {
+      const token = authService.getToken()
+      if (!token) return null
+      
       const response = await api.get('/profile/profile')
       return response.data.user
     } catch (error) {
+      // If token is invalid, remove it
+      authService.removeToken()
       return null
     }
   },
@@ -25,10 +45,12 @@ export const authService = {
   // Logout
   logout: async () => {
     try {
-      await api.get('/auth/logout')
-      // Don't redirect here - let the frontend handle it
+      await api.post('/auth/logout')
     } catch (error) {
       console.error('Logout error:', error)
+    } finally {
+      // Always remove token on logout
+      authService.removeToken()
     }
   },
 
@@ -40,5 +62,12 @@ export const authService = {
     } catch {
       return false
     }
+  },
+
+  // Handle OAuth callback with token
+  handleOAuthCallback: (token: string): void => {
+    authService.setToken(token)
+    // Remove token from URL
+    window.history.replaceState({}, document.title, window.location.pathname)
   }
 }

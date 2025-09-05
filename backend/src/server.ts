@@ -1,6 +1,5 @@
 import express from 'express';
 import cors from 'cors';
-import session from 'express-session';
 import passport from 'passport';
 import './config/passport'; // Ensure passport strategies are loaded
 import inventoryRouter from './routes/inventory';
@@ -29,21 +28,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Session middleware (required for Passport)
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'your_secret',
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: true, // Use NODE_ENV from .env file
-    httpOnly: true,
-    sameSite: 'none', // Use 'none' only in production with HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
-
+// Initialize Passport (no sessions needed for JWT)
 app.use(passport.initialize());
-app.use(passport.session());
 
 // API routes
 app.use('/auth', authRouter);

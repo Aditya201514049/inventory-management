@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import prisma from '../prisma';
-import { ensureAuth } from '../middleware/ensureAuth';
+import { jwtAuth, AuthenticatedRequest } from '../middleware/jwtAuth';
 
 const router = Router();
 
 // Search users by name or email (for autocomplete)
-router.get('/search', ensureAuth, async (req, res) => {
+router.get('/search', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { q } = req.query;
     
@@ -45,9 +45,9 @@ router.get('/search', ensureAuth, async (req, res) => {
 });
 
 // Get current user's profile
-router.get('/profile', ensureAuth, async (req, res) => {
+router.get('/profile', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     
     const userProfile = await prisma.user.findUnique({
       where: { id: user.id },
@@ -77,9 +77,9 @@ router.get('/profile', ensureAuth, async (req, res) => {
 });
 
 // Update current user's profile
-router.put('/profile', ensureAuth, async (req, res) => {
+router.put('/profile', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const { name } = req.body;
 
     if (!name || !name.trim()) {
@@ -106,9 +106,9 @@ router.put('/profile', ensureAuth, async (req, res) => {
 });
 
 // Get current user's owned inventories
-router.get('/profile/inventories', ensureAuth, async (req, res) => {
+router.get('/profile/inventories', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const { page = '1', limit = '20', search = '' } = req.query;
     const pageNum = parseInt(page as string) || 1;
     const limitNum = parseInt(limit as string) || 20;
@@ -155,9 +155,9 @@ router.get('/profile/inventories', ensureAuth, async (req, res) => {
 });
 
 // Get current user's write access inventories
-router.get('/profile/access', ensureAuth, async (req, res) => {
+router.get('/profile/access', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const { page = '1', limit = '20' } = req.query;
     const pageNum = parseInt(page as string) || 1;
     const limitNum = parseInt(limit as string) || 20;

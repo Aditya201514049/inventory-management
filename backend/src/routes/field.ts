@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '../prisma';
-import { ensureAuth } from '../middleware/ensureAuth';
+import { jwtAuth, AuthenticatedRequest } from '../middleware/jwtAuth';
 import { z } from 'zod';
 
 const router = Router();
@@ -109,10 +109,10 @@ router.get('/inventory/:inventoryId', async (req, res) => {
 });
 
 // Create new field
-router.post('/inventory/:inventoryId', ensureAuth, async (req, res) => {
+router.post('/inventory/:inventoryId', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { inventoryId } = req.params;
-    const user = (req as any).user;
+    const user = req.user;
     const parsed = createFieldSchema.parse(req.body);
 
     // Check if user can manage fields
@@ -167,10 +167,10 @@ router.post('/inventory/:inventoryId', ensureAuth, async (req, res) => {
 });
 
 // Update field
-router.put('/:fieldId', ensureAuth, async (req, res) => {
+router.put('/:fieldId', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { fieldId } = req.params;
-    const user = (req as any).user;
+    const user = req.user;
     const parsed = updateFieldSchema.parse(req.body);
 
     // Get field and check permissions
@@ -240,10 +240,10 @@ router.put('/:fieldId', ensureAuth, async (req, res) => {
 });
 
 // Delete field
-router.delete('/:fieldId', ensureAuth, async (req, res) => {
+router.delete('/:fieldId', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { fieldId } = req.params;
-    const user = (req as any).user;
+    const user = req.user;
 
     // Get field and check permissions
     const field = await prisma.field.findUnique({
@@ -284,10 +284,10 @@ router.delete('/:fieldId', ensureAuth, async (req, res) => {
 });
 
 // Reorder fields (batch update)
-router.put('/inventory/:inventoryId/reorder', ensureAuth, async (req, res) => {
+router.put('/inventory/:inventoryId/reorder', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { inventoryId } = req.params;
-    const user = (req as any).user;
+    const user = req.user;
     const { fieldOrders } = req.body; // Array of { fieldId, order }
 
     if (!Array.isArray(fieldOrders)) {

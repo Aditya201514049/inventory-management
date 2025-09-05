@@ -1,5 +1,6 @@
 import { Router } from "express";
 import passport from "../config/passport";
+import { generateToken } from "../utils/jwt";
 
 const router = Router();
 
@@ -12,15 +13,28 @@ router.get("/google", passport.authenticate("google", {
 
 router.get("/google/callback",
   passport.authenticate("google", { 
-    failureRedirect: `${FRONTEND_URL}/login` 
+    failureRedirect: `${FRONTEND_URL}/login`,
+    session: false // Disable session for JWT
   }),
   (req, res) => {
     console.log('=== OAUTH CALLBACK SUCCESS ===');
     console.log('User:', req.user);
-    console.log('Session ID:', req.sessionID);
-    console.log('Is Authenticated:', req.isAuthenticated());
-    console.log('About to redirect to:', `${FRONTEND_URL}/dashboard`);
-    res.redirect(`${FRONTEND_URL}/dashboard`);
+    
+    if (!req.user) {
+      console.log('No user found, redirecting to login');
+      return res.redirect(`${FRONTEND_URL}/login`);
+    }
+
+    // Generate JWT token
+    const token = generateToken({
+      userId: (req.user as any).id,
+      email: (req.user as any).email,
+      name: (req.user as any).name
+    });
+
+    console.log('Generated JWT token, redirecting to dashboard');
+    // Redirect to frontend with token as query parameter
+    res.redirect(`${FRONTEND_URL}/dashboard?token=${token}`);
   }
 );
 
@@ -31,21 +45,36 @@ router.get("/github", passport.authenticate("github", {
 
 router.get("/github/callback",
   passport.authenticate("github", { 
-    failureRedirect: `${FRONTEND_URL}/login` 
+    failureRedirect: `${FRONTEND_URL}/login`,
+    session: false // Disable session for JWT
   }),
   (req, res) => {
-    // Redirect to frontend dashboard after successful login
-    res.redirect(`${FRONTEND_URL}/dashboard`);
+    console.log('=== GITHUB OAUTH CALLBACK SUCCESS ===');
+    console.log('User:', req.user);
+    
+    if (!req.user) {
+      console.log('No user found, redirecting to login');
+      return res.redirect(`${FRONTEND_URL}/login`);
+    }
+
+    // Generate JWT token
+    const token = generateToken({
+      userId: (req.user as any).id,
+      email: (req.user as any).email,
+      name: (req.user as any).name
+    });
+
+    console.log('Generated JWT token, redirecting to dashboard');
+    // Redirect to frontend with token as query parameter
+    res.redirect(`${FRONTEND_URL}/dashboard?token=${token}`);
   }
 );
 
-// Logout
-router.get("/logout", (req, res, next) => {
-  req.logout(err => {
-    if (err) return next(err);
-    // Redirect to frontend login page after logout
-    res.redirect(`${FRONTEND_URL}/login`);
-  });
+// Logout (JWT doesn't need server-side logout, just client-side token removal)
+router.post("/logout", (req, res) => {
+  // With JWT, logout is handled client-side by removing the token
+  // Server doesn't need to do anything
+  res.json({ message: 'Logged out successfully' });
 });
 
 export default router;

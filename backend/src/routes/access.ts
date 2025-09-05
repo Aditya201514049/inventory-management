@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import prisma from '../prisma';
-import { ensureAuth } from '../middleware/ensureAuth';
+import { jwtAuth, AuthenticatedRequest } from '../middleware/jwtAuth';
 import { z } from 'zod';
 
 const router = Router();
 
 // Get access list for an inventory
-router.get('/inventory/:inventoryId', ensureAuth, async (req, res) => {
+router.get('/inventory/:inventoryId', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const { inventoryId } = req.params;
 
     // Check if user has access to view this inventory
@@ -38,9 +38,9 @@ router.get('/inventory/:inventoryId', ensureAuth, async (req, res) => {
 });
 
 // Grant access to a user
-router.post('/inventory/:inventoryId', ensureAuth, async (req, res) => {
+router.post('/inventory/:inventoryId', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const { inventoryId } = req.params;
     const { userId, canWrite = false } = req.body;
 
@@ -97,9 +97,9 @@ router.post('/inventory/:inventoryId', ensureAuth, async (req, res) => {
 });
 
 // Update access permissions
-router.put('/inventory/:inventoryId/user/:userId', ensureAuth, async (req, res) => {
+router.put('/inventory/:inventoryId/user/:userId', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const { inventoryId, userId } = req.params;
     const { canWrite } = req.body;
 
@@ -135,9 +135,9 @@ router.put('/inventory/:inventoryId/user/:userId', ensureAuth, async (req, res) 
 });
 
 // Revoke access
-router.delete('/inventory/:inventoryId/user/:userId', ensureAuth, async (req, res) => {
+router.delete('/inventory/:inventoryId/user/:userId', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const user = (req as any).user;
+    const user = req.user;
     const { inventoryId, userId } = req.params;
 
     // Check if user has permission to manage access
@@ -170,7 +170,7 @@ router.delete('/inventory/:inventoryId/user/:userId', ensureAuth, async (req, re
 });
 
 // Search users for autocomplete (by name or email)
-router.get('/users/search', ensureAuth, async (req, res) => {
+router.get('/users/search', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { query = '' } = req.query;
     

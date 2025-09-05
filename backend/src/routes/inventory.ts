@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '../prisma';
-import { ensureAuth } from '../middleware/ensureAuth';
+import { jwtAuth, optionalJwtAuth, AuthenticatedRequest } from '../middleware/jwtAuth';
 import { z } from 'zod';
 
 const router = Router();
@@ -120,7 +120,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get current user's inventories - MUST be before the /:id route
-router.get('/my', ensureAuth, async (req, res) => {
+router.get('/my', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const userId = (req as any).user.id;
     console.log('DEBUG: Fetching inventories for user ID:', userId);
@@ -302,7 +302,7 @@ router.get('/popular/top5', async (req, res) => {
 });
 
 // Create inventory (owner or any authenticated user)
-router.post('/', ensureAuth, async (req, res) => {
+router.post('/', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const parsed = createInventorySchema.parse(req.body);
     const user = (req as any).user;
@@ -350,7 +350,7 @@ router.post('/', ensureAuth, async (req, res) => {
 });
 
 // Update inventory (owner or admin), with optimistic locking
-router.put('/:id', ensureAuth, async (req, res) => {
+router.put('/:id', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const parsed = updateInventorySchema.parse(req.body);
     const user = (req as any).user;
@@ -438,7 +438,7 @@ router.put('/:id', ensureAuth, async (req, res) => {
 });
 
 // Delete inventory (owner or admin)
-router.delete('/:id', ensureAuth, async (req, res) => {
+router.delete('/:id', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const user = (req as any).user;
     
@@ -483,7 +483,7 @@ router.delete('/:id', ensureAuth, async (req, res) => {
 });
 
 // Generate custom ID based on format
-router.post('/:id/generate-id', ensureAuth, async (req, res) => {
+router.post('/:id/generate-id', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id: inventoryId } = req.params;
     const { customIdParts } = req.body;
@@ -592,7 +592,7 @@ function generateGUID(): string {
 }
 
 // Validate custom ID against format
-router.post('/:id/validate-id', ensureAuth, async (req, res) => {
+router.post('/:id/validate-id', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id: inventoryId } = req.params;
     const { customId } = req.body;

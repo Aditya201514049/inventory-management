@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '../prisma';
-import { ensureAuth } from '../middleware/ensureAuth';
+import { jwtAuth, AuthenticatedRequest } from '../middleware/jwtAuth';
 import { z } from 'zod';
 
 const router = Router();
@@ -14,7 +14,7 @@ function ensureAdmin(req: any, res: any, next: any) {
 }
 
 // List all users with pagination and filtering
-router.get('/users', ensureAuth, ensureAdmin, async (req, res) => {
+router.get('/users', jwtAuth, ensureAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const { page = '1', limit = '20', search = '', blocked = '' } = req.query;
     const pageNum = parseInt(page as string) || 1;
@@ -75,7 +75,7 @@ router.get('/users', ensureAuth, ensureAdmin, async (req, res) => {
 });
 
 // Get single user details
-router.get('/users/:userId', ensureAuth, ensureAdmin, async (req, res) => {
+router.get('/users/:userId', jwtAuth, ensureAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const { userId } = req.params;
     
@@ -124,7 +124,7 @@ router.get('/users/:userId', ensureAuth, ensureAdmin, async (req, res) => {
 });
 
 // Promote user to admin
-router.post('/users/:userId/promote', ensureAuth, ensureAdmin, async (req, res) => {
+router.post('/users/:userId/promote', jwtAuth, ensureAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const { userId } = req.params;
     
@@ -160,7 +160,7 @@ router.post('/users/:userId/promote', ensureAuth, ensureAdmin, async (req, res) 
 });
 
 // Demote admin to regular user
-router.post('/users/:userId/demote', ensureAuth, ensureAdmin, async (req, res) => {
+router.post('/users/:userId/demote', jwtAuth, ensureAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const { userId } = req.params;
     
@@ -207,7 +207,7 @@ router.post('/users/:userId/demote', ensureAuth, ensureAdmin, async (req, res) =
 });
 
 // Block user
-router.post('/users/:userId/block', ensureAuth, ensureAdmin, async (req, res) => {
+router.post('/users/:userId/block', jwtAuth, ensureAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const { userId } = req.params;
     
@@ -242,7 +242,7 @@ router.post('/users/:userId/block', ensureAuth, ensureAdmin, async (req, res) =>
 });
 
 // Unblock user
-router.post('/users/:userId/unblock', ensureAuth, ensureAdmin, async (req, res) => {
+router.post('/users/:userId/unblock', jwtAuth, ensureAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const { userId } = req.params;
     
@@ -277,7 +277,7 @@ router.post('/users/:userId/unblock', ensureAuth, ensureAdmin, async (req, res) 
 });
 
 // Delete user (with cascade protection)
-router.delete('/users/:userId', ensureAuth, ensureAdmin, async (req, res) => {
+router.delete('/users/:userId', jwtAuth, ensureAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const { userId } = req.params;
     
@@ -314,7 +314,7 @@ router.delete('/users/:userId', ensureAuth, ensureAdmin, async (req, res) => {
 });
 
 // Get admin dashboard statistics
-router.get('/stats', ensureAuth, ensureAdmin, async (req, res) => {
+router.get('/stats', jwtAuth, ensureAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const [
       totalUsers,

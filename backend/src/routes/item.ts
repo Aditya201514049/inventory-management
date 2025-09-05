@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '../prisma';
-import { ensureAuth } from '../middleware/ensureAuth';
+import { jwtAuth, optionalJwtAuth, AuthenticatedRequest } from '../middleware/jwtAuth';
 import { z } from 'zod';
 
 const router = Router();
@@ -138,7 +138,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create new item
-router.post('/inventory/:inventoryId', ensureAuth, async (req, res) => {
+router.post('/inventory/:inventoryId', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { inventoryId } = req.params;
     const user = (req as any).user;
@@ -208,7 +208,7 @@ router.post('/inventory/:inventoryId', ensureAuth, async (req, res) => {
 });
 
 // Update item
-router.put('/:id', ensureAuth, async (req, res) => {
+router.put('/:id', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
     const user = (req as any).user;
@@ -301,7 +301,7 @@ router.put('/:id', ensureAuth, async (req, res) => {
 });
 
 // Delete item
-router.delete('/:id', ensureAuth, async (req, res) => {
+router.delete('/:id', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
     const user = (req as any).user;
@@ -332,7 +332,7 @@ router.delete('/:id', ensureAuth, async (req, res) => {
 });
 
 // Toggle like on item
-router.post('/:id/like', ensureAuth, async (req, res) => {
+router.post('/:id/like', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
     const user = (req as any).user;
@@ -372,7 +372,7 @@ router.post('/:id/like', ensureAuth, async (req, res) => {
 });
 
 // Add comment to item
-router.post('/:id/comments', ensureAuth, async (req, res) => {
+router.post('/:id/comments', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
     const user = (req as any).user;
@@ -411,7 +411,7 @@ router.post('/:id/comments', ensureAuth, async (req, res) => {
 });
 
 // Update comment (only by comment author)
-router.put('/:id/comments/:commentId', ensureAuth, async (req, res) => {
+router.put('/:id/comments/:commentId', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id: itemId, commentId } = req.params;
     const user = (req as any).user;
@@ -450,7 +450,7 @@ router.put('/:id/comments/:commentId', ensureAuth, async (req, res) => {
 });
 
 // Delete comment (only by comment author or admin)
-router.delete('/:id/comments/:commentId', ensureAuth, async (req, res) => {
+router.delete('/:id/comments/:commentId', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id: itemId, commentId } = req.params;
     const user = (req as any).user;

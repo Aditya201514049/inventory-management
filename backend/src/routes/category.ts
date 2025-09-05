@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import prisma from '../prisma';
-import { ensureAuth } from '../middleware/ensureAuth';
+import { jwtAuth, AuthenticatedRequest } from '../middleware/jwtAuth';
 
 const router = Router();
 
@@ -37,7 +37,7 @@ router.get('/popular', async (req, res) => {
 });
 
 // Create category (admin only)
-router.post('/', ensureAuth, ensureAdmin, async (req, res) => {
+router.post('/', jwtAuth, ensureAdmin, async (req: AuthenticatedRequest, res) => {
   const { name } = req.body as { name?: string };
   if (!name || !name.trim()) return res.status(400).json({ message: 'Name is required' });
 
@@ -55,7 +55,7 @@ router.post('/', ensureAuth, ensureAdmin, async (req, res) => {
 });
 
 // Delete category (admin only) — inventories get categoryId set to NULL (per FK rule)
-router.delete('/:id', ensureAuth, ensureAdmin, async (req, res) => {
+router.delete('/:id', jwtAuth, ensureAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     await prisma.category.delete({ where: { id: req.params.id } });
     res.json({ message: 'Category deleted' });
@@ -65,7 +65,7 @@ router.delete('/:id', ensureAuth, ensureAdmin, async (req, res) => {
 });
 
 // Optional: seed defaults (admin only, idempotent)
-router.post('/seed', ensureAuth, ensureAdmin, async (_req, res) => {
+router.post('/seed', jwtAuth, ensureAdmin, async (_req: AuthenticatedRequest, res) => {
   const defaults = ['Equipment', 'Furniture', 'Books', 'Documents', 'Other'];
   for (const n of defaults) {
     try {
