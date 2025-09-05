@@ -5,6 +5,7 @@ import { authService } from '../services/auth'
 interface AuthContextType {
   user: User | null
   loading: boolean
+  initialized: boolean
   isAuthenticated: boolean
   login: (provider: 'google' | 'github') => void
   logout: () => void
@@ -27,29 +28,33 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [initialized, setInitialized] = useState(false)
 
   const checkAuth = useCallback(async () => {
-    if (!initialized) {
-      setLoading(true)
-    }
+    setLoading(true)
     try {
       const currentUser = await authService.getCurrentUser()
       setUser(currentUser)
     } catch (error) {
       setUser(null)
+      // Clear invalid token
+      authService.removeToken()
     } finally {
       setLoading(false)
-      if (!initialized) {
-        setInitialized(true)
-      }
+      setInitialized(true)
     }
-  }, [initialized])
-
-  useEffect(() => {
-    checkAuth()
   }, [])
+
+  // Initialize authentication state on app startup - but only if there's a token
+  useEffect(() => {
+    const token = authService.getToken()
+    if (token) {
+      checkAuth()
+    } else {
+      setInitialized(true)
+    }
+  }, [checkAuth])
 
   const login = (provider: 'google' | 'github') => {
     if (provider === 'google') {
@@ -73,7 +78,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const value: AuthContextType = {
     user,
     loading,
-    isAuthenticated: !!user,
+    initialized,
+    isAuthenticated: !!user && initialized,
     login,
     logout,
     checkAuth
