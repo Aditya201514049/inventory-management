@@ -67,20 +67,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = async () => {
     try {
-      setUser(null)
       await authService.logout()
-      window.location.href = '/'
     } catch (error) {
       console.error('Logout error:', error)
+    } finally {
+      setUser(null)
       window.location.href = '/'
     }
   }
+  
 
   const value: AuthContextType = {
     user,
     loading,
     initialized,
-    isAuthenticated: !!user && initialized,
+    isAuthenticated: !!user || !!authService.getToken(),
     login,
     logout,
     checkAuth

@@ -14,6 +14,7 @@ import InventoriesIndex from './pages/inventories/index';
 import InventoriesCreate from './pages/inventories/create';
 import InventoriesDetail from './pages/inventories/[id]';
 import ProtectedRoute from './components/ProtectedRoute';
+import AuthCallback from './pages/AuthCallback'
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ function App() {
                     <Route path="/inventories" element={<InventoriesIndex />} />
                     <Route path="/inventories/create" element={<InventoriesCreate />} />
                     <Route path="/inventories/:id" element={<InventoriesDetail />} />
+                    <Route path="/auth/callback" element={<AuthCallback />} />
                   </Route>
                 </Routes>
               </main>

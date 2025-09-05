@@ -26,9 +26,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     )
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
-  }
+  const token = localStorage.getItem("jwt_token");
+
+if (!isAuthenticated && !token) {
+  return <Navigate to="/login" replace />;
+}
 
   return <>{children}</>
 }

@@ -34,7 +34,8 @@ router.get("/google/callback",
 
     console.log('Generated JWT token, redirecting to dashboard');
     // Redirect to frontend with token as query parameter
-    res.redirect(`${FRONTEND_URL}/dashboard?token=${token}`);
+    res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}`)
+
   }
 );
 
@@ -66,7 +67,8 @@ router.get("/github/callback",
 
     console.log('Generated JWT token, redirecting to dashboard');
     // Redirect to frontend with token as query parameter
-    res.redirect(`${FRONTEND_URL}/dashboard?token=${token}`);
+    res.redirect(`${FRONTEND_URL}/auth/callback?token=${token}`)
+
   }
 );
 

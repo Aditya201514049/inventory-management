@@ -23,7 +23,7 @@ export const authService = {
       const token = authService.getToken()
       if (!token) return null
       
-      const response = await api.get('/profile/profile')
+      const response = await api.get('/profile')
       return response.data.user
     } catch (error) {
       // If token is invalid, remove it
@@ -69,5 +69,8 @@ export const authService = {
     authService.setToken(token)
     // Remove token from URL
     window.history.replaceState({}, document.title, window.location.pathname)
+    // Reload the app so AuthProvider runs checkAuth
+    window.location.reload()
   }
+  
 }
