@@ -35,9 +35,9 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === 'production', // Use NODE_ENV from .env file
+    secure: true, // Use NODE_ENV from .env file
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Use 'none' only in production with HTTPS
+    sameSite: 'none', // Use 'none' only in production with HTTPS
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
