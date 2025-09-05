@@ -15,7 +15,11 @@ router.get("/google/callback",
     failureRedirect: `${FRONTEND_URL}/login` 
   }),
   (req, res) => {
-    // Redirect to frontend dashboard after successful login
+    console.log('=== OAUTH CALLBACK SUCCESS ===');
+    console.log('User:', req.user);
+    console.log('Session ID:', req.sessionID);
+    console.log('Is Authenticated:', req.isAuthenticated());
+    console.log('About to redirect to:', `${FRONTEND_URL}/dashboard`);
     res.redirect(`${FRONTEND_URL}/dashboard`);
   }
 );

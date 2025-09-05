@@ -7,7 +7,10 @@ const router = express.Router();
 
 // Get current user's profile
 router.get('/profile', ensureAuth, (req: Request, res: Response) => {
-  // The user is available in req.user after authentication
+  console.log('=== PROFILE REQUEST ===');
+  console.log('Session ID:', (req as any).sessionID);
+  console.log('Is Authenticated:', (req as any).isAuthenticated());
+  console.log('User:', (req as any).user);
   res.json({ user: req.user });
 });
 
