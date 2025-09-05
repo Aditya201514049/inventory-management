@@ -9,27 +9,49 @@ import { authService } from '../services/auth'
 const Dashboard = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
-  const { checkAuth } = useAuth(); 
+  const { user, checkAuth, isAuthenticated, loading, initialized } = useAuth();
+
+  // DEBUG: Log auth state
+  console.log('Dashboard render - Auth state:', {
+    user: user?.name || 'null',
+    isAuthenticated,
+    loading,
+    initialized,
+    hasToken: !!authService.getToken()
+  });
 
   // Handle OAuth callback with JWT token
-  
   useEffect(() => {
     const token = searchParams.get('token');
+    console.log('Dashboard useEffect - token from URL:', token ? 'present' : 'missing');
+    
     if (token) {
-      console.log('Handling OAuth callback with token');
-      authService.handleOAuthCallback(token);
+      console.log('Processing OAuth callback token...');
       
-      // Refresh AuthContext to recognize the new token
+      // Store the token
+      authService.handleOAuthCallback(token);
+      console.log('Token stored, checking auth state...');
+      
+      // Refresh AuthContext
       checkAuth().then(() => {
-        console.log('Auth state refreshed');
-        // Clean URL without full page reload
+        console.log('Auth check completed, navigating...');
+        // Clean URL without reload
         navigate('/dashboard', { replace: true });
+      }).catch((error) => {
+        console.error('Auth check failed:', error);
       });
     }
   }, [searchParams, checkAuth, navigate]);
 
-
+  // DEBUG: Log when component renders with different states
+  useEffect(() => {
+    console.log('Dashboard auth state changed:', {
+      user: user?.name || 'null',
+      isAuthenticated,
+      loading,
+      initialized
+    });
+  }, [user, isAuthenticated, loading, initialized]);
 
   // Get user's inventories for dashboard stats
   const { data: inventoriesData } = useQuery({
@@ -65,8 +87,29 @@ const Dashboard = () => {
     }
   ];
 
+  // Show loading state while auth is being checked
+  if (loading && !initialized) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
+      {/* DEBUG INFO - Remove this in production */}
+      <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
+        <strong>DEBUG:</strong> User: {user?.name || 'Not authenticated'} | 
+        Token: {authService.getToken() ? 'Present' : 'Missing'} | 
+        Auth: {isAuthenticated ? 'Yes' : 'No'} | 
+        Loading: {loading ? 'Yes' : 'No'} | 
+        Initialized: {initialized ? 'Yes' : 'No'}
+      </div>
+
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 rounded-xl p-8 text-white">
         <div className="flex items-center justify-between">
