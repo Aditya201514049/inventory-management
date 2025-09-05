@@ -3,10 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useQuery } from '@tanstack/react-query'
 import { getInventories } from '../services/inventory'
+import { useEffect } from 'react'
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, checkAuth } = useAuth();
+
+  // Check authentication status when component mounts (important for OAuth redirects)
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   // Get user's inventories for dashboard stats
   const { data: inventoriesData } = useQuery({
