@@ -21,6 +21,7 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+/*
 // Content Security Policy for OAuth - only in production
 if (process.env.NODE_ENV === 'production') {
   app.use((req, res, next) => {
@@ -37,6 +38,7 @@ if (process.env.NODE_ENV === 'production') {
     next();
   });
 }
+*/
 
 app.use(cors({
   origin: FRONTEND_URL, // Use environment variable instead of hardcoded URL

@@ -77,4 +77,15 @@ router.post("/logout", (req, res) => {
   res.json({ message: 'Logged out successfully' });
 });
 
+// ADD THIS ROUTE before export default router;
+router.get("/debug", (req, res) => {
+  res.json({
+    backendUrl: process.env.BACKEND_URL,
+    frontendUrl: FRONTEND_URL,
+    nodeEnv: process.env.NODE_ENV,
+    hasGoogleConfig: !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET),
+    hasGithubConfig: !!(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET)
+  });
+});
+
 export default router;
