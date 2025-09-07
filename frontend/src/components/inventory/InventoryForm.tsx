@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { Inventory, CreateInventoryInput, UpdateInventoryInput } from '../../types/inventory';
 import { createInventory, updateInventory } from '../../services/inventory';
+import { useAuth } from '../../contexts/AuthContext';
+import { Info } from 'lucide-react';
 
 interface InventoryFormProps {
   initialData?: Inventory;
@@ -21,6 +23,10 @@ const InventoryForm = ({ initialData }: InventoryFormProps) => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const isEditing = !!initialData;
+  const { user } = useAuth();
+
+  // Check if current user is the owner of this specific inventory
+  const isOwner = !initialData || (user && initialData.ownerId === user.id);
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     defaultValues: initialData ? {
@@ -93,15 +99,28 @@ const InventoryForm = ({ initialData }: InventoryFormProps) => {
         </div>
 
         <div className="flex items-center">
-          <input
-            type="checkbox"
-            id="isPublic"
-            {...register('isPublic')}
-            className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-gray-700"
-          />
+          {isOwner ? (
+            <input
+              type="checkbox"
+              id="isPublic"
+              {...register('isPublic')}
+              className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-gray-700"
+            />
+          ) : (
+            <input
+              type="checkbox"
+              id="isPublic"
+              {...register('isPublic')}
+              disabled
+              className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500 bg-white dark:bg-gray-700"
+            />
+          )}
           <label htmlFor="isPublic" className="ml-3 block text-sm text-gray-700 dark:text-gray-300">
             Make this inventory public
           </label>
+          {!isOwner && (
+            <Info className="ml-2 w-4 h-4 text-gray-500 dark:text-gray-400" />
+          )}
         </div>
 
         <div>
