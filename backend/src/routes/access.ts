@@ -22,7 +22,7 @@ router.get('/inventory/:inventoryId', jwtAuth, async (req: AuthenticatedRequest,
     }
 
     if (inventory.ownerId !== user.id && !user.isAdmin) {
-      return res.status(403).json({ message: 'Forbidden' });
+      return res.status(403).json({ message: 'Only the inventory owner can view access permissions. You have access to this inventory but cannot view other users.' });
     }
 
     const accessList = await prisma.access.findMany({
@@ -55,7 +55,7 @@ router.post('/inventory/:inventoryId', jwtAuth, async (req: AuthenticatedRequest
     }
 
     if (inventory.ownerId !== user.id && !user.isAdmin) {
-      return res.status(403).json({ message: 'Forbidden' });
+      return res.status(403).json({ message: 'Only the inventory owner can manage access permissions. You have access to this inventory but cannot add or remove other users.' });
     }
 
     // Check if target user exists
@@ -114,7 +114,7 @@ router.put('/inventory/:inventoryId/user/:userId', jwtAuth, async (req: Authenti
     }
 
     if (inventory.ownerId !== user.id && !user.isAdmin) {
-      return res.status(403).json({ message: 'Forbidden' });
+      return res.status(403).json({ message: 'Only the inventory owner can manage access permissions. You have access to this inventory but cannot add or remove other users.' });
     }
 
     const access = await prisma.access.update({
@@ -151,7 +151,7 @@ router.delete('/inventory/:inventoryId/user/:userId', jwtAuth, async (req: Authe
     }
 
     if (inventory.ownerId !== user.id && !user.isAdmin) {
-      return res.status(403).json({ message: 'Forbidden' });
+      return res.status(403).json({ message: 'Only the inventory owner can manage access permissions. You have access to this inventory but cannot add or remove other users.' });
     }
 
     await prisma.access.delete({

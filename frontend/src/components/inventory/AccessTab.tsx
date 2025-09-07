@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Inventory } from '../../types/inventory';
 import { getInventoryAccess, addUserAccess, removeUserAccess, updateInventoryAccess } from '../../services/access';
 import UserAutocomplete from './UserAutocomplete';
-import { Trash2, Users, Lock, Unlock } from 'lucide-react';
+import { Trash2, Users, Lock, Unlock, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface AccessTabProps {
   inventoryId: string;
@@ -24,6 +25,7 @@ interface AccessUser {
 
 const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [sortBy, setSortBy] = useState<'name' | 'email'>('name');
   const [isPublic, setIsPublic] = useState(inventory.isPublic);
 
@@ -41,8 +43,9 @@ const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
       queryClient.invalidateQueries({ queryKey: ['inventory', inventoryId] });
       toast.success(isPublic ? 'Inventory is now private' : 'Inventory is now public');
     },
-    onError: () => {
-      toast.error('Failed to update inventory access');
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to update inventory access';
+      toast.error(message);
     }
   });
 
@@ -53,8 +56,9 @@ const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
       queryClient.invalidateQueries({ queryKey: ['inventory-access', inventoryId] });
       toast.success('User added successfully');
     },
-    onError: () => {
-      toast.error('Failed to add user');
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to add user';
+      toast.error(message);
     }
   });
 
@@ -65,8 +69,9 @@ const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
       queryClient.invalidateQueries({ queryKey: ['inventory-access', inventoryId] });
       toast.success('User removed successfully');
     },
-    onError: () => {
-      toast.error('Failed to remove user');
+    onError: (error: any) => {
+      const message = error.response?.data?.message || 'Failed to remove user';
+      toast.error(message);
     }
   });
 
@@ -130,81 +135,82 @@ const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
       </div>
 
       {/* User Access Management */}
-      {!isPublic && (
+      {!isPublic && user && inventory.ownerId === user.id && (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
           <div className="flex items-center space-x-2 mb-4">
             <Users className="h-5 w-5 text-gray-600 dark:text-gray-400" />
             <h3 className="text-lg font-medium text-gray-900 dark:text-white">User Access</h3>
           </div>
 
-          {/* Add User */}
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Add User by Name or Email
-            </label>
-            <UserAutocomplete
-              onSelectUser={handleAddUser}
-              excludeUserIds={accessList.map(access => access.userId)}
-              placeholder="Search users by name or email..."
-            />
-          </div>
+          <UserAutocomplete
+            onSelectUser={handleAddUser}
+            placeholder="Add user by email..."
+          />
 
-          {/* Sort Controls */}
-          <div className="flex items-center space-x-4 mb-4">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Sort by:</span>
-            <button
-              onClick={() => setSortBy('name')}
-              className={`px-3 py-1 rounded text-sm transition-colors ${
-                sortBy === 'name'
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              Name
-            </button>
-            <button
-              onClick={() => setSortBy('email')}
-              className={`px-3 py-1 rounded text-sm transition-colors ${
-                sortBy === 'email'
-                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300'
-                  : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600'
-              }`}
-            >
-              Email
-            </button>
-          </div>
-
-          {/* Access List */}
-          <div className="space-y-2">
-            {sortedAccessList.length === 0 ? (
-              <p className="text-gray-500 dark:text-gray-400 text-center py-4">
-                No users have access to this inventory
-              </p>
-            ) : (
-              sortedAccessList.map((access) => (
-                <div
-                  key={access.id}
-                  className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
+          {isLoading ? (
+            <div className="text-gray-500 dark:text-gray-400 mt-4">Loading users...</div>
+          ) : accessList.length > 0 ? (
+            <div className="mt-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-gray-600 dark:text-gray-400">
+                  {accessList.length} user{accessList.length !== 1 ? 's' : ''} with access
+                </span>
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as 'name' | 'email')}
+                  className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                 >
-                  <div>
-                    <div className="font-medium text-gray-900 dark:text-white">
-                      {access.user.name || 'No name'}
+                  <option value="name">Sort by Name</option>
+                  <option value="email">Sort by Email</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                {sortedAccessList.map((access) => (
+                  <div key={access.id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-md">
+                    <div>
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {access.user.name || access.user.email}
+                      </div>
+                      {access.user.name && (
+                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                          {access.user.email}
+                        </div>
+                      )}
                     </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      {access.user.email}
-                    </div>
+                    <button
+                      onClick={() => handleRemoveUser(access.userId)}
+                      disabled={removeUserMutation.isPending}
+                      className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 p-1 rounded disabled:opacity-50"
+                      title="Remove access"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => handleRemoveUser(access.userId)}
-                    disabled={removeUserMutation.isPending}
-                    className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-colors disabled:opacity-50"
-                    title="Remove access"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              ))
-            )}
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="text-gray-500 dark:text-gray-400 mt-4">
+              No users have been granted access to this inventory.
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Information for shared users */}
+      {!isPublic && inventory.ownerId !== user?.id && (
+        <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="flex items-start space-x-3">
+            <Info className="h-5 w-5 text-blue-600 dark:text-blue-400 mt-0.5" />
+            <div>
+              <h3 className="text-lg font-medium text-blue-900 dark:text-blue-100 mb-2">
+                Shared Inventory Access
+              </h3>
+              <p className="text-blue-800 dark:text-blue-200 text-sm">
+                This inventory has been shared with you by the owner. 
+                You can view and edit items, but only the owner can manage access permissions for other users.
+              </p>
+            </div>
           </div>
         </div>
       )}
