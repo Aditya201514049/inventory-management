@@ -31,6 +31,7 @@ function App() {
                 <Routes>
                   <Route path="/login" element={<Login />} />
                   <Route path="/" element={<Home />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
                   
                   {/* Protected Routes */}
                   <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
@@ -40,7 +41,6 @@ function App() {
                     <Route path="/inventories" element={<InventoriesIndex />} />
                     <Route path="/inventories/create" element={<InventoriesCreate />} />
                     <Route path="/inventories/:id" element={<InventoriesDetail />} />
-                    <Route path="/auth/callback" element={<AuthCallback />} />
                   </Route>
                 </Routes>
               </main>
