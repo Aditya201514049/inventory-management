@@ -48,6 +48,9 @@ const Navbar = () => {
                 <Link to="/inventories" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
                   Inventories
                 </Link>
+                <Link to="/my-inventories" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                  My Inventories
+                </Link>
                 {user?.isAdmin && (
                   <Link to="/admin" className="text-purple-600 dark:text-purple-400 hover:text-purple-900 dark:hover:text-purple-300 flex items-center">
                     <Shield className="h-4 w-4 mr-1" />
@@ -127,6 +130,13 @@ const Navbar = () => {
                     onClick={closeMobileMenu}
                   >
                     Inventories
+                  </Link>
+                  <Link 
+                    to="/my-inventories" 
+                    className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
+                    onClick={closeMobileMenu}
+                  >
+                    My Inventories
                   </Link>
                   {user?.isAdmin && (
                     <Link 

@@ -20,18 +20,31 @@ const updateItemSchema = z.object({
 
 // Helper function to check if user can write to inventory
 async function canWriteToInventory(inventoryId: string, userId: string): Promise<boolean> {
+  console.log('canWriteToInventory check:', { inventoryId, userId });
+  
   const inventory = await prisma.inventory.findUnique({
     where: { id: inventoryId },
     select: { ownerId: true, isPublic: true }
   });
 
-  if (!inventory) return false;
+  console.log('Inventory found:', inventory);
+
+  if (!inventory) {
+    console.log('Inventory not found');
+    return false;
+  }
   
   // Owner can always write
-  if (inventory.ownerId === userId) return true;
+  if (inventory.ownerId === userId) {
+    console.log('User is owner - access granted');
+    return true;
+  }
   
   // Public inventory - any authenticated user can write
-  if (inventory.isPublic) return true;
+  if (inventory.isPublic) {
+    console.log('Public inventory - access granted');
+    return true;
+  }
   
   // Check explicit access
   const access = await prisma.access.findUnique({
@@ -40,7 +53,11 @@ async function canWriteToInventory(inventoryId: string, userId: string): Promise
     }
   });
   
-  return access?.canWrite || false;
+  console.log('Access record found:', access);
+  const hasAccess = access?.canWrite || false;
+  console.log('Final access decision:', hasAccess);
+  
+  return hasAccess;
 }
 
 // List items in an inventory
@@ -144,11 +161,25 @@ router.post('/inventory/:inventoryId', jwtAuth, async (req: AuthenticatedRequest
     const user = (req as any).user;
     const parsed = createItemSchema.parse(req.body);
 
+    console.log('Item creation attempt:', { 
+      inventoryId, 
+      userId: user.id, 
+      userEmail: user.email,
+      isAdmin: user.isAdmin 
+    });
+
     // Check if user can write to this inventory
     const canWrite = await canWriteToInventory(inventoryId, user.id);
+    console.log('Write permission result:', canWrite);
+    
     if (!canWrite) {
+      console.log('Access denied for item creation - user does not have write access to this inventory');
+      console.log('User details:', { userId: user.id, userEmail: user.email, isAdmin: user.isAdmin });
+      console.log('Inventory details:', { inventoryId });
       return res.status(403).json({ message: 'No write access to this inventory' });
     }
+
+    console.log('Access granted - proceeding with item creation');
 
     // Get inventory with custom ID parts for validation
     const inventory = await prisma.inventory.findUnique({

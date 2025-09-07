@@ -4,19 +4,22 @@ import { useQuery } from '@tanstack/react-query';
 import { getUsers } from '../services/admin';
 import { getUserInventories } from '../services/inventory';
 import { getUserStats } from '../services/profile';
+import { useNavigate } from 'react-router-dom';
 import { 
   User, 
   Mail, 
   Calendar, 
   Shield, 
   Package,
-  BarChart3
+  BarChart3,
+  Edit
 } from 'lucide-react';
 
 
 const ProfilePage = () => {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'overview' | 'inventories'>('overview');
+  const navigate = useNavigate();
 
   // Get user's detailed stats using dedicated profile endpoint
   const { data: userStats } = useQuery({
@@ -182,7 +185,7 @@ const ProfilePage = () => {
             ) : userInventories && userInventories.data && userInventories.data.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {userInventories.data.map((inventory) => (
-                  <div key={inventory.id} className="border dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800">
+                  <div key={inventory.id} className="border dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow bg-white dark:bg-gray-800 cursor-pointer" onClick={() => navigate(`/inventories/${inventory.id}`)}>
                     <div className="flex items-start justify-between mb-3">
                       <h4 className="font-semibold text-gray-900 dark:text-white truncate">{inventory.title}</h4>
                       <span className={`px-2 py-1 text-xs rounded-full ${
