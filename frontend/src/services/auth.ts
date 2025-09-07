@@ -34,12 +34,16 @@ export const authService = {
 
   // Login with Google
   loginWithGoogle: () => {
-    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/google`
+    // Use environment-aware URL
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+    window.location.href = `${backendUrl}/auth/google`;
   },
 
   // Login with GitHub
   loginWithGitHub: () => {
-    window.location.href = `${import.meta.env.VITE_BACKEND_URL}/auth/github`
+    // Use environment-aware URL  
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000';
+    window.location.href = `${backendUrl}/auth/github`;
   },
 
   // Logout

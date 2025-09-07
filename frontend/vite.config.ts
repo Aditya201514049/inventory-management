@@ -10,10 +10,24 @@ export default defineConfig({
         target: 'http://localhost:4000',
         changeOrigin: true,
       },
-      '/auth': {
+      // Only proxy backend auth routes, not frontend auth routes
+      '/auth/google': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/auth/github': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/auth/logout': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/auth/debug': {
         target: 'http://localhost:4000',
         changeOrigin: true,
       }
+      // Note: /auth/callback is NOT proxied - handled by React Router
     }
   },
   build: {
