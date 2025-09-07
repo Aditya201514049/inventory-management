@@ -76,7 +76,7 @@ const MyInventories = () => {
           </p>
         </div>
         <button
-          onClick={() => navigate('/inventories/new')}
+          onClick={() => navigate('/inventories/create')}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md flex items-center space-x-2 transition-colors"
         >
           <Plus className="h-4 w-4" />
@@ -192,7 +192,7 @@ const MyInventories = () => {
           </p>
           {!search && filter === 'all' && (
             <button
-              onClick={() => navigate('/inventories/new')}
+              onClick={() => navigate('/inventories/create')}
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-md flex items-center space-x-2 mx-auto transition-colors"
             >
               <Plus className="h-5 w-5" />
