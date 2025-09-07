@@ -1,27 +1,28 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { authService } from '../services/auth'
 
 const AuthCallback: React.FC = () => {
-  const navigate = useNavigate()
-
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     const token = params.get('token')
 
     if (token) {
-      // Store the token in localStorage
-      authService.handleOAuthCallback(token)
-
-      // Navigate to dashboard without full reload
-      navigate('/dashboard', { replace: true })
+      // Store the token and reload the page to ensure clean state
+      authService.setToken(token)
+      // Remove token from URL and redirect to dashboard
+      window.location.replace('/dashboard')
     } else {
       // If token missing, redirect to login
-      navigate('/login', { replace: true })
+      window.location.replace('/login')
     }
-  }, [navigate])
+  }, [])
 
-  return <div>Processing login...</div>
+  return (
+    <div className="flex justify-center items-center h-64">
+      <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      <span className="ml-2">Processing login...</span>
+    </div>
+  )
 }
 
 export default AuthCallback

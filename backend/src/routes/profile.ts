@@ -6,7 +6,7 @@ import prisma from '../prisma';
 const router = express.Router();
 
 // Get current user's profile
-router.get('/profile', jwtAuth, (req: AuthenticatedRequest, res: Response) => {
+router.get('/', jwtAuth, (req: AuthenticatedRequest, res: Response) => {
   console.log('=== PROFILE REQUEST ===');
   console.log('Session ID:', (req as any).sessionID);
   console.log('Is Authenticated:', (req as any).isAuthenticated());
