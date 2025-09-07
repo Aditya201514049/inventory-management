@@ -101,15 +101,6 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8">
-      {/* DEBUG INFO - Remove this in production */}
-      <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-        <strong>DEBUG:</strong> User: {user?.name || 'Not authenticated'} | 
-        Token: {authService.getToken() ? 'Present' : 'Missing'} | 
-        Auth: {isAuthenticated ? 'Yes' : 'No'} | 
-        Loading: {loading ? 'Yes' : 'No'} | 
-        Initialized: {initialized ? 'Yes' : 'No'}
-      </div>
-
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 dark:from-blue-700 dark:to-purple-700 rounded-xl p-8 text-white">
         <div className="flex items-center justify-between">
