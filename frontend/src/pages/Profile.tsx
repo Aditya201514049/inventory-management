@@ -11,8 +11,7 @@ import {
   Calendar, 
   Shield, 
   Package,
-  BarChart3,
-  Edit
+  BarChart3
 } from 'lucide-react';
 
 
