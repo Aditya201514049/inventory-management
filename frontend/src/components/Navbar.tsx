@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { Shield, LogOut, LogIn, Menu, X, Sun, Moon } from 'lucide-react'
+import { Shield, LogOut, LogIn, Menu, X, Sun, Moon, Home, Package, User, FolderOpen } from 'lucide-react'
 import { useState } from 'react'
 
 const Navbar = () => {
@@ -43,12 +43,15 @@ const Navbar = () => {
             {isAuthenticated ? (
               <>
                 <Link to="/dashboard" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                  <Home className="h-5 w-5 mr-1" />
                   Dashboard
                 </Link>
                 <Link to="/inventories" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                  <Package className="h-5 w-5 mr-1" />
                   Inventories
                 </Link>
                 <Link to="/my-inventories" className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white">
+                  <FolderOpen className="h-5 w-5 mr-1" />
                   My Inventories
                 </Link>
                 {user?.isAdmin && (
@@ -61,7 +64,8 @@ const Navbar = () => {
                   to="/profile" 
                   className="text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:underline"
                 >
-                  Welcome, {user?.name || user?.email}
+                  <User className="h-5 w-5 mr-1" />
+                   {user?.name || user?.email}
                 </Link>
                 <button 
                   onClick={logout}
@@ -122,6 +126,7 @@ const Navbar = () => {
                     className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
                     onClick={closeMobileMenu}
                   >
+                    <Home className="h-5 w-5 mr-2" />
                     Dashboard
                   </Link>
                   <Link 
@@ -129,6 +134,7 @@ const Navbar = () => {
                     className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
                     onClick={closeMobileMenu}
                   >
+                    <Package className="h-5 w-5 mr-2" />
                     Inventories
                   </Link>
                   <Link 
@@ -136,6 +142,7 @@ const Navbar = () => {
                     className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
                     onClick={closeMobileMenu}
                   >
+                    <FolderOpen className="h-5 w-5 mr-2" />
                     My Inventories
                   </Link>
                   {user?.isAdmin && (
@@ -153,6 +160,7 @@ const Navbar = () => {
                     className="block px-3 py-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800 rounded-md"
                     onClick={closeMobileMenu}
                   >
+                    <User className="h-5 w-5 mr-2" />
                     Profile ({user?.name || user?.email})
                   </Link>
                   <button 
