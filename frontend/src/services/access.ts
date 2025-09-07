@@ -39,5 +39,5 @@ export const updateInventoryAccess = async (
   inventoryId: string, 
   data: UpdateInventoryAccessData
 ): Promise<void> => {
-  await api.patch(`/api/inventories/${inventoryId}`, data);
+  await api.patch(`/inventories/${inventoryId}`, data);
 };
