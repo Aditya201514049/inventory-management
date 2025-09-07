@@ -23,8 +23,13 @@ passport.deserializeUser(async (id: string, done) => {
 const getCallbackURL = (provider: string) => {
   if (process.env.NODE_ENV === 'production') {
     return `${process.env.BACKEND_URL}/auth/${provider}/callback`;
+  } else if (process.env.NODE_ENV === 'development') {
+    return `http://localhost:4000/auth/${provider}/callback`;
+  } else {
+    // Fallback for any other environment
+    console.warn(`Unknown NODE_ENV: ${process.env.NODE_ENV}, defaulting to localhost`);
+    return `http://localhost:4000/auth/${provider}/callback`;
   }
-  return `http://localhost:4000/auth/${provider}/callback`;
 };
 
 // ----------------- Google OAuth -----------------
