@@ -131,27 +131,38 @@ router.get('/my', jwtAuth, async (req: AuthenticatedRequest, res) => {
     const limitNum = parseInt(limit as string) || 20;
     const skip = (pageNum - 1) * limitNum;
 
-    // First, let's check all inventories to see what exists
-    const allInventories = await prisma.inventory.findMany({
-      select: { id: true, title: true, ownerId: true, owner: { select: { id: true, email: true } } }
-    });
-    console.log('DEBUG: All inventories in database:', allInventories);
-
+    // Include both owned inventories AND inventories user has access to
     const [inventories, total] = await Promise.all([
       prisma.inventory.findMany({
-        where: { ownerId: userId },
+        where: {
+          OR: [
+            { ownerId: userId }, // Owned inventories
+            { accessList: { some: { userId: userId } } } // Shared inventories with access
+          ]
+        },
         skip,
         take: limitNum,
         orderBy: { createdAt: 'desc' },
         include: {
           owner: { select: { id: true, name: true, email: true } },
           category: true,
+          accessList: {
+            where: { userId: userId },
+            select: { canWrite: true }
+          },
           _count: {
             select: { items: true, comments: true }
           }
         }
       }),
-      prisma.inventory.count({ where: { ownerId: userId } })
+      prisma.inventory.count({
+        where: {
+          OR: [
+            { ownerId: userId }, // Owned inventories
+            { accessList: { some: { userId: userId } } } // Shared inventories with access
+          ]
+        }
+      })
     ]);
 
     console.log('DEBUG: Found inventories for user:', inventories);

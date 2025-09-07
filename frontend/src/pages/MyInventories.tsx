@@ -12,7 +12,8 @@ import {
   Eye, 
   Lock,
   Search,
-  Filter
+  Filter,
+  User
 } from 'lucide-react';
 
 const MyInventories = () => {
@@ -110,7 +111,21 @@ const MyInventories = () => {
             <div key={inventory.id} className="border dark:border-gray-700 rounded-lg p-6 hover:shadow-md transition-shadow bg-white dark:bg-gray-800">
               <div className="flex items-start justify-between mb-4">
                 <h3 className="font-semibold text-gray-900 dark:text-white truncate flex-1">{inventory.title}</h3>
-                <div className="flex items-center ml-2">
+                <div className="flex items-center ml-2 space-x-2">
+                  {/* Ownership indicator */}
+                  {inventory.ownerId === user?.id ? (
+                    <div title="You own this inventory" className="flex items-center space-x-1">
+                      <User className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                      <span className="text-xs text-blue-600 dark:text-blue-400">Owner</span>
+                    </div>
+                  ) : (
+                    <div title="Shared with you" className="flex items-center space-x-1">
+                      <Package className="h-3 w-3 text-purple-600 dark:text-purple-400" />
+                      <span className="text-xs text-purple-600 dark:text-purple-400">Shared</span>
+                    </div>
+                  )}
+                  
+                  {/* Public/Private indicator */}
                   {inventory.isPublic ? (
                     <div title="Public" className="flex items-center space-x-1">
                       <Eye className="h-4 w-4 text-green-600 dark:text-green-400" />
