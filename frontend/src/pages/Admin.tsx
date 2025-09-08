@@ -10,6 +10,7 @@ import {
   deleteUser,
   AdminUser 
 } from '../services/admin';
+import { getAdminInventories, deleteInventory } from '../services/inventory';
 import { 
   Users, 
   Shield, 
@@ -21,15 +22,25 @@ import {
   UserMinus,
   AlertTriangle,
   Package,
-  MessageSquare
+  MessageSquare,
+  Edit,
+  Eye
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom';
 
 const AdminPage = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'inventories'>('overview');
   const [search, setSearch] = useState('');
   const [filterBlocked, setFilterBlocked] = useState<boolean | undefined>(undefined);
   const [page, setPage] = useState(1);
+
+  // Inventory management states
+  const [inventorySearch, setInventorySearch] = useState('');
+  const [inventoryPage, setInventoryPage] = useState(1);
+  const itemsPerPage = 10;
 
   // Fetch admin stats
   const { data: stats, isLoading: statsLoading, error: statsError } = useQuery({
@@ -42,7 +53,20 @@ const AdminPage = () => {
   const { data: usersData, isLoading: usersLoading, error: usersError } = useQuery({
     queryKey: ['admin-users', page, search, filterBlocked],
     queryFn: () => getUsers({ page, search, blocked: filterBlocked }),
-    retry: 1
+    retry: 1,
+    enabled: activeTab === 'users'
+  });
+
+  // Fetch inventories for admin view
+  const { data: inventoriesData, isLoading: inventoriesLoading, error: inventoriesError } = useQuery({
+    queryKey: ['admin-inventories', inventoryPage, inventorySearch],
+    queryFn: () => getAdminInventories({ 
+      page: inventoryPage, 
+      limit: itemsPerPage, 
+      search: inventorySearch 
+    }),
+    retry: 1,
+    enabled: activeTab === 'inventories'
   });
 
   // Handle errors with useEffect
@@ -59,6 +83,13 @@ const AdminPage = () => {
       toast.error('Failed to load users');
     }
   }, [usersError]);
+
+  React.useEffect(() => {
+    if (inventoriesError) {
+      console.error('Inventories error:', inventoriesError);
+      toast.error('Failed to load inventories');
+    }
+  }, [inventoriesError]);
 
   // Mutations
   const promoteMutation = useMutation({
@@ -111,6 +142,16 @@ const AdminPage = () => {
     onError: () => toast.error('Failed to delete user')
   });
 
+  const deleteInventoryMutation = useMutation({
+    mutationFn: deleteInventory,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-inventories'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      toast.success('Inventory deleted');
+    },
+    onError: () => toast.error('Failed to delete inventory')
+  });
+
   const handleAction = (action: string, user: AdminUser) => {
     const confirmMessage = {
       promote: `Promote ${user.name || user.email} to admin?`,
@@ -138,6 +179,12 @@ const AdminPage = () => {
           deleteMutation.mutate(user.id);
           break;
       }
+    }
+  };
+
+  const handleInventoryDelete = (inventoryId: string, inventoryName: string) => {
+    if (window.confirm(`Delete inventory "${inventoryName}"? This action cannot be undone.`)) {
+      deleteInventoryMutation.mutate(inventoryId);
     }
   };
 
@@ -223,7 +270,30 @@ const AdminPage = () => {
         </div>
       )}
 
+      {/* Tab Navigation */}
+      <div className="flex space-x-4 mb-4">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`text-sm font-medium ${activeTab === 'overview' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'} hover:text-blue-600 dark:hover:text-blue-400`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`text-sm font-medium ${activeTab === 'users' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'} hover:text-blue-600 dark:hover:text-blue-400`}
+        >
+          Users
+        </button>
+        <button
+          onClick={() => setActiveTab('inventories')}
+          className={`text-sm font-medium ${activeTab === 'inventories' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-gray-400'} hover:text-blue-600 dark:hover:text-blue-400`}
+        >
+          Inventories
+        </button>
+      </div>
+
       {/* User Management */}
+      {activeTab === 'users' && (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
         <div className="p-6 border-b dark:border-gray-700">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">User Management</h2>
@@ -409,6 +479,150 @@ const AdminPage = () => {
           </div>
         )}
       </div>
+      )}
+
+      {/* Inventory Management */}
+      {activeTab === 'inventories' && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">
+          <div className="p-6 border-b dark:border-gray-700">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Inventory Management</h2>
+            
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 h-4 w-4" />
+              <input
+                type="text"
+                placeholder="Search inventories..."
+                value={inventorySearch}
+                onChange={(e) => setInventorySearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Inventories Table */}
+          <div className="overflow-x-auto">
+            {inventoriesLoading ? (
+              <div className="flex justify-center py-8 text-gray-600 dark:text-gray-400">Loading inventories...</div>
+            ) : inventoriesError ? (
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 m-4">
+                <p className="text-red-700 dark:text-red-400">Failed to load inventories: {inventoriesError?.message || 'Unknown error'}</p>
+              </div>
+            ) : !inventoriesData || !inventoriesData.data?.length ? (
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">No inventories found</div>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Inventory
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Owner
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Visibility
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Items
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {inventoriesData?.data.map((inventory: any) => (
+                    <tr key={inventory.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                            {inventory.title}
+                          </div>
+                          {inventory.description && (
+                            <div className="text-sm text-gray-500 dark:text-gray-400 truncate max-w-xs">
+                              {inventory.description}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <div>
+                          <div className="font-medium text-gray-900 dark:text-white">
+                            {inventory.owner?.name || 'No name'}
+                          </div>
+                          <div className="text-gray-500 dark:text-gray-400">
+                            {inventory.owner?.email}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                          inventory.isPublic 
+                            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300' 
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+                        }`}>
+                          {inventory.isPublic ? 'Public' : 'Private'}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <div>
+                          {inventory._count?.items || 0} items
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => navigate(`/inventories/${inventory.id}`)}
+                            className="text-blue-600 hover:text-blue-900"
+                            title="View Inventory"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleInventoryDelete(inventory.id, inventory.title)}
+                            className="text-red-600 hover:text-red-900"
+                            title="Delete Inventory"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {inventoriesData && inventoriesData.total > 0 && (
+            <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+              <div className="text-sm text-gray-700 dark:text-gray-300">
+                Showing {((inventoriesData.page - 1) * inventoriesData.limit) + 1} to{' '}
+                {Math.min(inventoriesData.page * inventoriesData.limit, inventoriesData.total)} of{' '}
+                {inventoriesData.total} inventories
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => setInventoryPage(inventoryPage - 1)}
+                  disabled={inventoryPage <= 1}
+                  className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Previous
+                </button>
+                <button
+                  onClick={() => setInventoryPage(inventoryPage + 1)}
+                  disabled={inventoryPage >= inventoriesData.totalPages}
+                  className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Warning Notice */}
       <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">

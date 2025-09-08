@@ -5,6 +5,64 @@ import { z } from 'zod';
 
 const router = Router();
 
+// Admin endpoint to get ALL inventories (no access control)
+router.get('/admin/all', jwtAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const user = (req as any).user;
+    
+    // Verify admin access
+    if (!user.isAdmin) {
+      return res.status(403).json({ message: 'Admin access required' });
+    }
+
+    const { search, page = '1', limit = '20' } = req.query;
+    const pageNum = parseInt(page as string) || 1;
+    const limitNum = parseInt(limit as string) || 20;
+    const skip = (pageNum - 1) * limitNum;
+
+    const where: any = {};
+    
+    // Search functionality for admin
+    if (search) {
+      where.OR = [
+        { title: { contains: search as string, mode: 'insensitive' } },
+        { description: { contains: search as string, mode: 'insensitive' } },
+        { tags: { hasSome: [search as string] } }
+      ];
+    }
+
+    const [inventories, total] = await Promise.all([
+      prisma.inventory.findMany({
+        where,
+        include: { 
+          owner: true, 
+          category: true,
+          _count: {
+            select: { items: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limitNum,
+      }),
+      prisma.inventory.count({ where })
+    ]);
+
+    res.json({
+      inventories,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum)
+      }
+    });
+  } catch (error) {
+    console.error('Error in admin inventory route:', error);
+    res.status(500).json({ message: 'Failed to fetch inventories' });
+  }
+});
+
 const CustomIdType = z.enum([
   'FIXED',
   'RANDOM20',

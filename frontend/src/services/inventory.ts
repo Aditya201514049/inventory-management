@@ -37,6 +37,34 @@ export const getInventories = async (params?: GetInventoriesParams): Promise<Pag
   }
 };
 
+export const getAdminInventories = async (params?: GetInventoriesParams): Promise<PaginatedResponse<Inventory>> => {
+  try {
+    const queryParams = {
+      page: 1,
+      limit: 10,
+      ...params
+    };
+    const response = await api.get('/inventories/admin/all', { params: queryParams });
+    // Map backend response to frontend expected shape
+    return {
+      data: response.data.inventories || [],
+      total: response.data.pagination?.total || 0,
+      page: response.data.pagination?.page || 1,
+      limit: response.data.pagination?.limit || 10,
+      totalPages: response.data.pagination?.pages || 1
+    };
+  } catch (error) {
+    console.error('Error fetching admin inventories:', error);
+    return {
+      data: [],
+      total: 0,
+      page: 1,
+      limit: 10,
+      totalPages: 1
+    };
+  }
+};
+
 export const getInventory = async (id: string): Promise<Inventory> => {
   try {
     const response = await api.get<Inventory>(`/inventories/${id}`);
