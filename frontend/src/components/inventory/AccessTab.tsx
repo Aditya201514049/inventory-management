@@ -85,8 +85,8 @@ const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
 
   return (
     <div className="space-y-6">
-      {/* User Access Management - Show for inventory owners */}
-      {inventory.ownerId === user.id ? (
+      {/* User Access Management - Show for inventory owners and admins */}
+      {inventory.ownerId === user.id || user.isAdmin ? (
         <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border dark:border-gray-700">
           <div className="flex items-center space-x-2 mb-4">
             <Users className="h-5 w-5 text-gray-600 dark:text-gray-400" />
