@@ -58,7 +58,7 @@ async function checkFieldLimits(inventoryId: string, fieldType: string): Promise
 }
 
 // Helper function to check if user can manage fields
-async function canManageFields(inventoryId: string, userId: string): Promise<boolean> {
+async function canManageFields(inventoryId: string, userId: string, isAdmin: boolean = false): Promise<boolean> {
   const inventory = await prisma.inventory.findUnique({
     where: { id: inventoryId },
     select: { ownerId: true, isPublic: true }
@@ -69,7 +69,10 @@ async function canManageFields(inventoryId: string, userId: string): Promise<boo
   // Owner can always manage
   if (inventory.ownerId === userId) return true;
   
-  // Check explicit access
+  // Admin can manage any inventory
+  if (isAdmin) return true;
+  
+  // Check explicit access for regular users
   const access = await prisma.access.findUnique({
     where: {
       inventoryId_userId: { inventoryId, userId }
@@ -116,7 +119,7 @@ router.post('/inventory/:inventoryId', jwtAuth, async (req: AuthenticatedRequest
     const parsed = createFieldSchema.parse(req.body);
 
     // Check if user can manage fields
-    const canManage = await canManageFields(inventoryId, user.id);
+    const canManage = await canManageFields(inventoryId, user.id, user.isAdmin);
     if (!canManage) {
       return res.status(403).json({ message: 'No permission to manage fields' });
     }
@@ -184,7 +187,7 @@ router.put('/:fieldId', jwtAuth, async (req: AuthenticatedRequest, res) => {
     }
 
     // Check if user can manage fields
-    const canManage = await canManageFields(field.inventoryId, user.id);
+    const canManage = await canManageFields(field.inventoryId, user.id, user.isAdmin);
     if (!canManage) {
       return res.status(403).json({ message: 'No permission to manage fields' });
     }
@@ -256,7 +259,7 @@ router.delete('/:fieldId', jwtAuth, async (req: AuthenticatedRequest, res) => {
     }
 
     // Check if user can manage fields
-    const canManage = await canManageFields(field.inventoryId, user.id);
+    const canManage = await canManageFields(field.inventoryId, user.id, user.isAdmin);
     if (!canManage) {
       return res.status(403).json({ message: 'No permission to manage fields' });
     }
@@ -295,7 +298,7 @@ router.put('/inventory/:inventoryId/reorder', jwtAuth, async (req: Authenticated
     }
 
     // Check if user can manage fields
-    const canManage = await canManageFields(inventoryId, user.id);
+    const canManage = await canManageFields(inventoryId, user.id, user.isAdmin);
     if (!canManage) {
       return res.status(403).json({ message: 'No permission to manage fields' });
     }

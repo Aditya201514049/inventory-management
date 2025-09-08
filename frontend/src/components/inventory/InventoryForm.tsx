@@ -25,8 +25,8 @@ const InventoryForm = ({ initialData }: InventoryFormProps) => {
   const isEditing = !!initialData;
   const { user } = useAuth();
 
-  // Check if current user is the owner of this specific inventory
-  const isOwner = !initialData || (user && initialData.ownerId === user.id);
+  // Check if current user is the owner of this specific inventory or is an admin
+  const isOwner = !initialData || (user && (initialData.ownerId === user.id || user.isAdmin));
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     defaultValues: initialData ? {

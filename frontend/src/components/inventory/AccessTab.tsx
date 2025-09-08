@@ -33,11 +33,11 @@ const AccessTab: React.FC<AccessTabProps> = ({ inventoryId, inventory }) => {
     return <div className="text-gray-600 dark:text-gray-400">Loading...</div>;
   }
 
-  // Fetch access list only if user is the owner
+  // Fetch access list only if user is the owner or admin
   const { data: accessList = [], isLoading } = useQuery<AccessUser[]>({
     queryKey: ['inventory-access', inventoryId],
     queryFn: () => getInventoryAccess(inventoryId),
-    enabled: inventory.ownerId === user.id, // Only fetch if user is owner
+    enabled: inventory.ownerId === user.id || user.isAdmin, // Allow owners and admins
     retry: false // Don't retry on 403 errors
   });
 

@@ -1,8 +1,9 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getFields, createField, updateField, deleteField } from '../../services/field';
+import { getInventory } from '../../services/inventory';
 import { Field } from '../../types/field';
+import { useAuth } from '../../contexts/AuthContext';
 import FieldForm from './FieldForm'; // Add this import
 
 interface FieldsTabProps {
@@ -11,6 +12,7 @@ interface FieldsTabProps {
 
 export default function FieldsTab({ inventoryId }: FieldsTabProps) {
   const qc = useQueryClient();
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [editingField, setEditingField] = useState<Field | null>(null);
 
@@ -19,7 +21,17 @@ export default function FieldsTab({ inventoryId }: FieldsTabProps) {
     queryFn: () => getFields(inventoryId),
   });
 
+  // Get inventory details to check ownership
+  const { data: inventory } = useQuery({
+    queryKey: ['inventory', inventoryId],
+    queryFn: () => getInventory(inventoryId),
+    enabled: !!inventoryId
+  });
+
   const fields = data?.fields || [];
+
+  // Check if user can manage fields (owner or admin)
+  const canManageFields = user && inventory && (inventory.ownerId === user.id || user.isAdmin);
 
   const createMutation = useMutation({
     mutationFn: (fieldData: any) => createField(inventoryId, fieldData),
@@ -77,12 +89,14 @@ export default function FieldsTab({ inventoryId }: FieldsTabProps) {
     <div className="space-y-4">
       <div className="flex justify-between items-center">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Fields</h3>
-        <button
-          onClick={handleAdd}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-        >
-          Add Field
-        </button>
+        {canManageFields && (
+          <button
+            onClick={handleAdd}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Add Field
+          </button>
+        )}
       </div>
 
       {fields.length === 0 ? (
@@ -114,18 +128,22 @@ export default function FieldsTab({ inventoryId }: FieldsTabProps) {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => handleEdit(field)}
-                  className="px-3 py-1 text-sm border dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(field.id)}
-                  className="px-3 py-1 text-sm border dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 transition-colors"
-                >
-                  Delete
-                </button>
+                {canManageFields && (
+                  <button
+                    onClick={() => handleEdit(field)}
+                    className="px-3 py-1 text-sm border dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 transition-colors"
+                  >
+                    Edit
+                  </button>
+                )}
+                {canManageFields && (
+                  <button
+                    onClick={() => handleDelete(field.id)}
+                    className="px-3 py-1 text-sm border dark:border-gray-600 rounded hover:bg-gray-50 dark:hover:bg-gray-700 text-red-600 dark:text-red-400 transition-colors"
+                  >
+                    Delete
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -133,7 +151,7 @@ export default function FieldsTab({ inventoryId }: FieldsTabProps) {
       )}
 
       {/* Field Form Modal */}
-      {showForm && (
+      {showForm && canManageFields && (
         <FieldForm
           inventoryId={inventoryId}
           field={editingField}

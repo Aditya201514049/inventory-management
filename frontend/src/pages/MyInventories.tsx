@@ -40,9 +40,9 @@ const MyInventories = () => {
     }
   });
 
-  const handleDelete = (inventoryId: string, inventoryTitle: string, isOwner: boolean) => {
-    // Check if user is trying to delete a shared inventory
-    if (!isOwner) {
+  const handleDelete = (inventoryId: string, inventoryTitle: string, isOwner: boolean, isAdmin: boolean = false) => {
+    // Check if user is trying to delete a shared inventory (unless they're an admin)
+    if (!isOwner && !isAdmin) {
       toast.error(`Cannot delete "${inventoryTitle}" - You can only delete inventories you own. This inventory was shared with you by its owner.`);
       return;
     }
@@ -167,7 +167,7 @@ const MyInventories = () => {
                   <span>Edit</span>
                 </button>
                 <button
-                  onClick={() => handleDelete(inventory.id, inventory.title, inventory.ownerId === user?.id)}
+                  onClick={() => handleDelete(inventory.id, inventory.title, inventory.ownerId === user?.id, user?.isAdmin)}
                   disabled={deleteMutation.isPending}
                   className="flex items-center space-x-1 text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors disabled:opacity-50"
                 >
