@@ -1,8 +1,6 @@
-import { Plus, Package, BarChart3, TrendingUp, Eye, Users, Calendar, ArrowRight } from 'lucide-react'
+import { Plus, Package, BarChart3, Users, Calendar, ArrowRight } from 'lucide-react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { useQuery } from '@tanstack/react-query'
-import { getInventories } from '../services/inventory'
 import { useEffect } from 'react'
 import { authService } from '../services/auth'
 
@@ -53,15 +51,6 @@ const Dashboard = () => {
     });
   }, [user, isAuthenticated, loading, initialized]);
 
-  // Get user's inventories for dashboard stats
-  const { data: inventoriesData } = useQuery({
-    queryKey: ['dashboard-inventories'],
-    queryFn: () => getInventories({ limit: 100 }),
-  });
-
-  const totalInventories = inventoriesData?.total || 0;
-  const publicInventories = inventoriesData?.data?.filter(inv => inv.isPublic).length || 0;
-  const privateInventories = totalInventories - publicInventories;
 
   const quickActions = [
     {
@@ -124,47 +113,6 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Total Inventories</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{totalInventories}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">All your collections</p>
-            </div>
-            <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full">
-              <Package className="h-8 w-8 text-blue-600 dark:text-blue-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Public</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400">{publicInventories}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Visible to everyone</p>
-            </div>
-            <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-full">
-              <Eye className="h-8 w-8 text-green-600 dark:text-green-400" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Private</p>
-              <p className="text-3xl font-bold text-purple-600 dark:text-purple-400">{privateInventories}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Personal collections</p>
-            </div>
-            <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
-              <TrendingUp className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Quick Actions */}
       <div>
