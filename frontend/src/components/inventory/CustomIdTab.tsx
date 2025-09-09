@@ -81,7 +81,7 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
     }
   };
 
-  // ... existing code ...
+  
 
 const handleSave = async () => {
   if (!inventory) return;
@@ -105,7 +105,7 @@ const handleSave = async () => {
   }
 };
 
-// ... rest of the component ...
+
 
   const getPartPreview = (part: any) => {
     switch (part.type) {
