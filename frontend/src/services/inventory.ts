@@ -88,7 +88,7 @@ export const createInventory = async (data: CreateInventoryInput): Promise<Inven
     throw error;
   }
 };
-
+/*
 export const updateInventory = async (id: string, data: UpdateInventoryInput): Promise<Inventory> => {
   try {
     const response = await api.put<Inventory>(`/inventories/${id}`, data);
@@ -98,6 +98,34 @@ export const updateInventory = async (id: string, data: UpdateInventoryInput): P
     throw error;
   }
 };
+*/
+
+
+export const updateInventory = async (id: string, data: UpdateInventoryInput): Promise<Inventory> => {
+  try {
+    const response = await api.put<Inventory>(`/inventories/${id}`, data);
+    return response.data; // Remove .data since backend returns inventory directly
+  } catch (error: any) {
+    console.error(`Error updating inventory ${id}:`, error);
+    
+    // Handle optimistic locking conflicts
+    if (error.response?.status === 409) {
+      const message = error.response?.data?.message || 'This inventory was modified by another user. Please refresh and try again.';
+      throw new Error(message);
+    } else if (error.response?.status === 403) {
+      const message = error.response?.data?.message || 'You do not have permission to update this inventory';
+      throw new Error(message);
+    } else if (error.response?.status === 404) {
+      throw new Error('Inventory not found');
+    } else if (error.response?.status === 500) {
+      throw new Error('Server error occurred while updating inventory');
+    } else {
+      throw new Error('Failed to update inventory. Please try again.');
+    }
+  }
+};
+
+
 
 export const deleteInventory = async (id: string): Promise<void> => {
   try {

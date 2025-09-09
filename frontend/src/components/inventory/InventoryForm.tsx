@@ -5,6 +5,7 @@ import { Inventory, CreateInventoryInput, UpdateInventoryInput } from '../../typ
 import { createInventory, updateInventory } from '../../services/inventory';
 import { useAuth } from '../../contexts/AuthContext';
 import { Info } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 interface InventoryFormProps {
   initialData?: Inventory;
@@ -57,6 +58,16 @@ const InventoryForm = ({ initialData }: InventoryFormProps) => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['inventories'] });
       navigate('/inventories');
+    },
+    onError: (error: any) => {
+      console.error('Inventory mutation error:', error);
+      
+      // Show user-friendly error messages
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('An unexpected error occurred. Please try again.');
+      }
     }
   });
 

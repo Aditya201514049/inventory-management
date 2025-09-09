@@ -100,7 +100,14 @@ export default function ItemForm({ inventoryId, fields, inventory, initialData, 
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to create item');
+      console.error('Item creation error:', error);
+      
+      // Show user-friendly error messages
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('An unexpected error occurred. Please try again.');
+      }
     }
   });
 
@@ -112,7 +119,14 @@ export default function ItemForm({ inventoryId, fields, inventory, initialData, 
       onClose();
     },
     onError: (error: any) => {
-      toast.error(error.response?.data?.message || 'Failed to update item');
+      console.error('Item update error:', error);
+      
+      // Show user-friendly error messages
+      if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('An unexpected error occurred. Please try again.');
+      }
     }
   });
 

@@ -81,24 +81,31 @@ export default function CustomIdTab({ inventoryId }: CustomIdTabProps) {
     }
   };
 
-  const handleSave = async () => {
-    if (customIdParts.length === 0) {
-      toast.error('Please add at least one custom ID part');
-      return;
-    }
+  // ... existing code ...
 
-    setIsSaving(true);
-    try {
-      await saveCustomIdFormat(inventoryId, customIdParts, inventory?.version || 1);
-      qc.invalidateQueries({ queryKey: ['inventory', inventoryId] });
-      toast.success('Custom ID format saved successfully!');
-    } catch (error) {
-      console.error('Save error:', error);
-      toast.error('Failed to save custom ID format');
-    } finally {
-      setIsSaving(false);
+const handleSave = async () => {
+  if (!inventory) return;
+  
+  setIsSaving(true);
+  try {
+    await saveCustomIdFormat(inventoryId, customIdParts, inventory?.version || 1);
+    qc.invalidateQueries({ queryKey: ['inventory', inventoryId] });
+    toast.success('Custom ID format saved successfully!');
+  } catch (error: any) {
+    console.error('Error saving custom ID format:', error);
+    
+    // Show user-friendly error messages
+    if (error.message) {
+      toast.error(error.message);
+    } else {
+      toast.error('Failed to save custom ID format. Please try again.');
     }
-  };
+  } finally {
+    setIsSaving(false);
+  }
+};
+
+// ... rest of the component ...
 
   const getPartPreview = (part: any) => {
     switch (part.type) {
