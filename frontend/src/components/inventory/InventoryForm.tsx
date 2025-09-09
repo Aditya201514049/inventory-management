@@ -6,6 +6,7 @@ import { createInventory, updateInventory } from '../../services/inventory';
 import { useAuth } from '../../contexts/AuthContext';
 import { Info } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import EnhancedTagInput from './EnhancedTagInput';
 
 interface InventoryFormProps {
   initialData?: Inventory;
@@ -16,7 +17,7 @@ interface FormData {
   title: string;
   description?: string;
   isPublic: boolean;
-  tags: string; // This will be a string in the form
+  tags: string[]; // Real array
   customIdParts: any[];
 }
 
@@ -29,18 +30,18 @@ const InventoryForm = ({ initialData }: InventoryFormProps) => {
   // Check if current user is the owner of this specific inventory or is an admin
   const isOwner = !initialData || (user && (initialData.ownerId === user.id || user.isAdmin));
 
-  const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
+  const { register, handleSubmit, formState: { errors }, setValue, watch } = useForm<FormData>({
     defaultValues: initialData ? {
       title: initialData.title,
       description: initialData.description || '',
       isPublic: initialData.isPublic,
-      tags: initialData.tags.join(', '), // Convert array to string for form
+      tags: initialData.tags, // Use array directly
       customIdParts: initialData.customIdParts
     } : {
       title: '',
       description: '',
       isPublic: false,
-      tags: '',
+      tags: [], // Start empty
       customIdParts: []
     }
   });
@@ -72,18 +73,7 @@ const InventoryForm = ({ initialData }: InventoryFormProps) => {
   });
 
   const onSubmit = (formData: FormData) => {
-    // Transform tags from string to array
-    const transformedData: CreateInventoryInput | UpdateInventoryInput = {
-      ...formData,
-      tags: formData.tags
-        .split(',')
-        .map((tag: string) => tag.trim())
-        .filter((tag: string) => tag.length > 0)
-    };
-    
-    console.log('Form data:', formData); // Debug original form data
-    console.log('Transformed data:', transformedData); // Debug transformed data
-    mutation.mutate(transformedData);
+    mutation.mutate(formData);
   };
 
   return (
@@ -135,14 +125,15 @@ const InventoryForm = ({ initialData }: InventoryFormProps) => {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags (comma separated)</label>
-          <input
-            type="text"
-            {...register('tags')}
-            placeholder="electronics, office, supplies"
-            className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2"
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Tags</label>
+          <EnhancedTagInput
+            value={watch('tags') || []}
+            onChange={(tags) => setValue('tags', tags)}
+            placeholder="Type to add tags..."
           />
-          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Separate tags with commas to help categorize your inventory</p>
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            Press Enter or comma to add tags. Start typing to see suggestions.
+          </p>
         </div>
 
         <div className="flex justify-end space-x-3 pt-4 border-t dark:border-gray-700">
