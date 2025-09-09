@@ -88,17 +88,7 @@ export const createInventory = async (data: CreateInventoryInput): Promise<Inven
     throw error;
   }
 };
-/*
-export const updateInventory = async (id: string, data: UpdateInventoryInput): Promise<Inventory> => {
-  try {
-    const response = await api.put<Inventory>(`/inventories/${id}`, data);
-    return response.data; // Remove .data since backend returns inventory directly
-  } catch (error) {
-    console.error(`Error updating inventory ${id}:`, error);
-    throw error;
-  }
-};
-*/
+
 
 
 export const updateInventory = async (id: string, data: UpdateInventoryInput): Promise<Inventory> => {
