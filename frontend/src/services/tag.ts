@@ -11,3 +11,13 @@ export const getTagAutocomplete = async (prefix: string): Promise<string[]> => {
     return [];
   }
 };
+
+export const getAllTags = async (): Promise<string[]> => {
+  const { data } = await api.get('/tags');
+  return data;
+};
+
+export const getTagStats = async (): Promise<Array<{ tag: string; count: number }>> => {
+  const { data } = await api.get('/tags/stats');
+  return data;
+};

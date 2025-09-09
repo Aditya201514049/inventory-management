@@ -11,6 +11,7 @@ import itemRouter from './routes/item';
 import userRouter from './routes/user';
 import fieldRouter from './routes/field';
 import profileRouter from './routes/profile';
+import tagsRouter from './routes/tags';
 
 const app = express();
 
@@ -71,6 +72,7 @@ app.use('/api/item', itemRouter);
 app.use('/api/users', userRouter); 
 app.use('/api/fields', fieldRouter);
 app.use('/api/profile', profileRouter);
+app.use('/api', tagsRouter);
 
 // Root route - shows backend is running
 app.get('/', (req, res) => {

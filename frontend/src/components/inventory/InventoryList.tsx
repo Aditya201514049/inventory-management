@@ -6,16 +6,23 @@ import { deleteInventory } from '../../services/inventory';
 import { Link } from 'react-router-dom';
 import { getInventories } from '../../services/inventory';
 import type { Inventory, PaginatedResponse } from '../../types/inventory';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const InventoryList = () => {
   const queryClient = useQueryClient();
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+
+  const params = new URLSearchParams(location.search);
+  const selectedTag = params.get('tag') || undefined;
 
   const { data, isLoading, error } = useQuery<PaginatedResponse<Inventory>, Error>({
-    queryKey: ['inventories', currentPage, pageSize],
-    queryFn: () => getInventories({ page: currentPage, limit: pageSize })
+    queryKey: ['inventories', currentPage, pageSize, selectedTag],
+    queryFn: () => getInventories({ page: currentPage, limit: pageSize, tag: selectedTag })
   });
 
   // Debug: log what data is coming from backend
@@ -73,6 +80,22 @@ const InventoryList = () => {
         </Link>
       </div>
 
+      {selectedTag && (
+        <div className="mb-4 flex items-center gap-2">
+          <span className="text-sm text-gray-700 dark:text-gray-300">Filtering by tag:</span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300">
+            {selectedTag}
+          </span>
+          <button
+            type="button"
+            onClick={() => navigate('/inventories')}
+            className="text-sm text-gray-600 dark:text-gray-400 hover:underline"
+          >
+            Clear
+          </button>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {inventories.map((inventory) => (
           <div key={inventory.id} className="group relative p-4 border dark:border-gray-700 rounded-lg hover:shadow-md transition-shadow bg-white dark:bg-gray-800">
@@ -97,12 +120,15 @@ const InventoryList = () => {
             <p className="text-gray-600 dark:text-gray-400 line-clamp-2">{inventory.description}</p>
             <div className="mt-2 flex flex-wrap gap-1">
               {inventory.tags?.map((tag) => (
-                <span
+                <button
                   key={tag}
-                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300"
+                  type="button"
+                  onClick={() => navigate(`/inventories?tag=${encodeURIComponent(tag)}`)}
+                  className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 hover:opacity-80"
+                  title="Filter by this tag"
                 >
                   {tag}
-                </span>
+                </button>
               ))}
             </div>
           </div>

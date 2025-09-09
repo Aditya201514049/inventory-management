@@ -1,4 +1,5 @@
 import { Plus, Package, BarChart3, Users, Calendar, ArrowRight } from 'lucide-react'
+import TagCloud from '../components/search/TagCloud'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useEffect } from 'react'
@@ -171,6 +172,14 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Popular Tags */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Popular Tags</h2>
+        </div>
+        <TagCloud />
       </div>
     </div>
   )
