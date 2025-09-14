@@ -123,10 +123,11 @@ router.post('/create-account-contact', jwtAuth, async (req: AuthenticatedRequest
 
       res.json({
         success: true,
-        message: 'Account and Contact created successfully in Salesforce',
+        message: result.message || 'Account and Contact created successfully in Salesforce',
         accountId: result.accountId,
         contactId: result.contactId,
-        salesforceUrl: result.salesforceUrl
+        salesforceUrl: result.salesforceUrl,
+        isDuplicate: result.isDuplicate || false
       });
     } catch (error: unknown) {
       console.error('=== Salesforce OAuth Creation Error ===');
@@ -151,10 +152,16 @@ router.post('/create-account-contact', jwtAuth, async (req: AuthenticatedRequest
           // Handle duplicate detection
           if (errorData[0]?.errorCode === 'DUPLICATES_DETECTED') {
             const entityType = errorData[0]?.duplicateResult?.duplicateRuleEntityType || 'Record';
-            return res.status(400).json({
-              error: 'Duplicate Record Detected',
-              message: `A ${entityType} with similar information already exists in Salesforce. The system will use the existing record.`,
-              details: `Salesforce found an existing ${entityType} that matches your information. This is normal and the integration will work correctly.`
+            const recordId = errorData[0]?.duplicateResult?.matchResults?.[0]?.matchRecords?.[0]?.record?.Id;
+            
+            return res.status(200).json({
+              success: true,
+              message: `✅ Great! Your ${entityType.toLowerCase()} already exists in Salesforce`,
+              accountId: entityType === 'Account' ? recordId : 'existing',
+              contactId: entityType === 'Contact' ? recordId : 'existing',
+              salesforceUrl: recordId ? `https://login.salesforce.com/${recordId}` : '',
+              isDuplicate: true,
+              friendlyMessage: `We found your ${entityType.toLowerCase()} is already in the system - no need to create a duplicate! 🎉`
             });
           }
           
@@ -162,6 +169,16 @@ router.post('/create-account-contact', jwtAuth, async (req: AuthenticatedRequest
           if (errorData[0]?.errorCode === 'FIELD_INTEGRITY_EXCEPTION') {
             const fieldName = errorData[0]?.fields?.[0] || 'field';
             const fieldMessage = errorData[0]?.message || 'Field validation failed';
+            
+            // Special handling for state validation
+            if (fieldName === 'BillingState' || fieldName === 'MailingState') {
+              return res.status(400).json({
+                error: 'Invalid State/Province',
+                message: 'Please use a valid state or province code (e.g., CA for California, NY for New York)',
+                details: 'Salesforce requires standard state/province abbreviations. Please use 2-letter codes like CA, NY, TX, or leave the field empty.'
+              });
+            }
+            
             return res.status(400).json({
               error: 'Field Validation Error',
               message: `There's an issue with the ${fieldName} field: ${fieldMessage}`,

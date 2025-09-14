@@ -16,7 +16,7 @@ const SalesforceIntegration: React.FC<SalesforceIntegrationProps> = ({ onClose }
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState<{ accountId: string; contactId: string; salesforceUrl: string } | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | { message: string; details: string } | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
 
@@ -93,23 +93,51 @@ const SalesforceIntegration: React.FC<SalesforceIntegrationProps> = ({ onClose }
         salesforceUrl: result.salesforceUrl!,
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to create Salesforce records');
+      // Handle structured error responses from backend
+      if (err.details) {
+        setError({
+          message: err.message || 'Failed to create Salesforce records',
+          details: err.details
+        });
+      } else {
+        setError(err.message || 'Failed to create Salesforce records');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   if (success) {
+    const isDuplicate = (success as any).isDuplicate;
     return (
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6">
         <div className="text-center">
-          <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
-            Successfully Created in Salesforce!
-          </h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            Your Account and Contact records have been created in Salesforce.
-          </p>
+          {isDuplicate ? (
+            <>
+              <div className="relative mx-auto mb-4 w-16 h-16">
+                <CheckCircle className="h-16 w-16 text-blue-500 mx-auto" />
+                <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1">
+                  <span className="text-white text-xs">✓</span>
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                🎉 Perfect! You're Already in Salesforce
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Great news! We found your records already exist in Salesforce. No duplicates needed - you're all set!
+              </p>
+            </>
+          ) : (
+            <>
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+                Successfully Created in Salesforce!
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Your Account and Contact records have been created in Salesforce.
+              </p>
+            </>
+          )}
           
           <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -210,9 +238,16 @@ const SalesforceIntegration: React.FC<SalesforceIntegrationProps> = ({ onClose }
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <div className="flex items-center">
-              <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-              <p className="text-red-700 dark:text-red-400">{error}</p>
+            <div className="flex items-start">
+              <AlertCircle className="h-5 w-5 text-red-500 mr-3 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-red-700 dark:text-red-400 font-medium">
+                  {typeof error === 'string' ? error : error.message}
+                </p>
+                {typeof error === 'object' && error.details && (
+                  <p className="text-red-600 dark:text-red-300 text-sm mt-2">{error.details}</p>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -259,7 +294,6 @@ const SalesforceIntegration: React.FC<SalesforceIntegrationProps> = ({ onClose }
                   value={formData.email}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  readOnly={!user?.isAdmin}
                 />
               </div>
               <div>

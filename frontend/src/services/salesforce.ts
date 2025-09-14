@@ -89,7 +89,18 @@ export const createSalesforceAccountContact = async (userData: SalesforceUserDat
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.message || `HTTP error! status: ${response.status}`);
+    // Create a structured error object with the backend's detailed information
+    const errorObj = {
+      message: data.message || data.error || `HTTP error! status: ${response.status}`,
+      details: data.details || undefined,
+      error: data.error || undefined
+    };
+    
+    // Throw an error with the structured information
+    const error = new Error(errorObj.message);
+    (error as any).details = errorObj.details;
+    (error as any).errorType = errorObj.error;
+    throw error;
   }
 
   return data;

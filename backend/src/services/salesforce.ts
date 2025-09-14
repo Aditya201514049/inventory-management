@@ -350,19 +350,27 @@ class SalesforceService {
     }
   }
 
-  async createAccountAndContactWithOAuth(userData: SalesforceUserData, userId: string): Promise<{ accountId: string; contactId: string; salesforceUrl: string }> {
+  async createAccountAndContactWithOAuth(userData: SalesforceUserData, userId: string): Promise<{ accountId: string; contactId: string; salesforceUrl: string; isDuplicate?: boolean; message?: string }> {
     try {
       // Use OAuth tokens instead of username/password authentication
       const { accessToken, instanceUrl } = await SalesforceService.authenticateWithOAuth(userId);
       
       console.log('Using OAuth authentication for Salesforce API calls');
       
+      // Helper function to validate state codes
+      const validateState = (state?: string): string | undefined => {
+        if (!state) return undefined;
+        const validStates = ['AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA', 'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD', 'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ', 'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC', 'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY'];
+        const upperState = state.toUpperCase();
+        return validStates.includes(upperState) ? upperState : undefined;
+      };
+
       // Create Account
       const accountData = {
         Name: userData.company || `${userData.firstName} ${userData.lastName}`,
         BillingStreet: userData.address?.street,
         BillingCity: userData.address?.city,
-        BillingState: userData.address?.state,
+        BillingState: validateState(userData.address?.state),
         BillingPostalCode: userData.address?.postalCode,
         BillingCountry: userData.address?.country,
       };
@@ -383,15 +391,15 @@ class SalesforceService {
           }
         );
       } catch (error: any) {
-        // Handle duplicate detection
+        // Handle duplicate detection for Account
         if (error.message.includes('DUPLICATES_DETECTED')) {
-          console.log('Duplicate Account detected, extracting existing Account ID...');
+          console.log('✅ Duplicate Account detected - using existing record');
           const errorData = JSON.parse(error.message.replace('HTTP 400: ', ''));
           const duplicateId = errorData[0]?.duplicateResult?.matchResults?.[0]?.matchRecords?.[0]?.record?.Id;
           
           if (duplicateId) {
             console.log('Using existing Account ID:', duplicateId);
-            accountResult = { id: duplicateId };
+            accountResult = { id: duplicateId, isDuplicate: true };
           } else {
             throw new Error('Failed to extract duplicate Account ID');
           }
@@ -414,6 +422,11 @@ class SalesforceService {
         Phone: userData.phone,
         Title: userData.jobTitle,
         AccountId: accountResult.id,
+        MailingStreet: userData.address?.street,
+        MailingCity: userData.address?.city,
+        MailingState: validateState(userData.address?.state),
+        MailingPostalCode: userData.address?.postalCode,
+        MailingCountry: userData.address?.country,
       };
 
       console.log('Creating Contact with data:', contactData);
@@ -434,13 +447,13 @@ class SalesforceService {
       } catch (error: any) {
         // Handle duplicate detection for Contact
         if (error.message.includes('DUPLICATES_DETECTED')) {
-          console.log('Duplicate Contact detected, extracting existing Contact ID...');
+          console.log('✅ Duplicate Contact detected - using existing record');
           const errorData = JSON.parse(error.message.replace('HTTP 400: ', ''));
           const duplicateId = errorData[0]?.duplicateResult?.matchResults?.[0]?.matchRecords?.[0]?.record?.Id;
           
           if (duplicateId) {
             console.log('Using existing Contact ID:', duplicateId);
-            contactResult = { id: duplicateId };
+            contactResult = { id: duplicateId, isDuplicate: true };
           } else {
             throw new Error('Failed to extract duplicate Contact ID');
           }
@@ -455,10 +468,15 @@ class SalesforceService {
 
       console.log('Contact ID obtained:', contactResult.id);
 
+      // Check if either was a duplicate and return appropriate response
+      const isDuplicate = accountResult.isDuplicate || contactResult.isDuplicate;
+      
       return {
         accountId: accountResult.id,
         contactId: contactResult.id,
         salesforceUrl: `${instanceUrl}/${contactResult.id}`,
+        isDuplicate,
+        message: isDuplicate ? '✅ Great! Your records already exist in Salesforce' : 'Account and Contact created successfully'
       };
     } catch (error) {
       console.error('Error in createAccountAndContactWithOAuth:', error);
