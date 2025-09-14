@@ -1,13 +1,15 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import { Shield, LogOut, LogIn, Menu, X, Sun, Moon, Home, Package, User, FolderOpen } from 'lucide-react'
+import { Shield, LogOut, LogIn, Menu, X, Sun, Moon, Home, Package, User, FolderOpen, HelpCircle } from 'lucide-react'
 import { useState } from 'react'
+import SupportTicket from './SupportTicket'
 
 const Navbar = () => {
   const { user, isAuthenticated, logout } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isSupportTicketOpen, setIsSupportTicketOpen] = useState(false)
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen)
@@ -27,6 +29,17 @@ const Navbar = () => {
           
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-4">
+            {/* Support Ticket Button */}
+            {isAuthenticated && (
+              <button
+                onClick={() => setIsSupportTicketOpen(true)}
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                title="Get Help & Support"
+              >
+                <HelpCircle className="h-5 w-5" />
+              </button>
+            )}
+            
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -88,6 +101,17 @@ const Navbar = () => {
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-2">
+            {/* Mobile Support Button */}
+            {isAuthenticated && (
+              <button
+                onClick={() => setIsSupportTicketOpen(true)}
+                className="p-2 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white rounded-md hover:bg-gray-100 dark:hover:bg-gray-800"
+                title="Get Help & Support"
+              >
+                <HelpCircle className="h-5 w-5" />
+              </button>
+            )}
+            
             {/* Mobile Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -188,6 +212,12 @@ const Navbar = () => {
           </div>
         )}
       </div>
+      
+      {/* Support Ticket Modal */}
+      <SupportTicket
+        isOpen={isSupportTicketOpen}
+        onClose={() => setIsSupportTicketOpen(false)}
+      />
     </nav>
   )
 }

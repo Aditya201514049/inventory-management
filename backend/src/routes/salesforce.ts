@@ -139,10 +139,63 @@ router.post('/create-account-contact', jwtAuth, async (req: AuthenticatedRequest
       if (error instanceof Error && error.message.includes('No OAuth tokens available')) {
         return res.status(401).json({ 
           error: 'OAuth authentication required. Please authenticate with Salesforce first.',
-          requiresAuth: true
+          message: 'Please click "Authenticate with Salesforce" button first.'
         });
       }
-      
+
+      // Handle Salesforce validation errors with user-friendly messages
+      if (error instanceof Error && error.message.includes('HTTP 400:')) {
+        try {
+          const errorData = JSON.parse(error.message.replace('HTTP 400: ', ''));
+          
+          // Handle duplicate detection
+          if (errorData[0]?.errorCode === 'DUPLICATES_DETECTED') {
+            const entityType = errorData[0]?.duplicateResult?.duplicateRuleEntityType || 'Record';
+            return res.status(400).json({
+              error: 'Duplicate Record Detected',
+              message: `A ${entityType} with similar information already exists in Salesforce. The system will use the existing record.`,
+              details: `Salesforce found an existing ${entityType} that matches your information. This is normal and the integration will work correctly.`
+            });
+          }
+          
+          // Handle field validation errors
+          if (errorData[0]?.errorCode === 'FIELD_INTEGRITY_EXCEPTION') {
+            const fieldName = errorData[0]?.fields?.[0] || 'field';
+            const fieldMessage = errorData[0]?.message || 'Field validation failed';
+            return res.status(400).json({
+              error: 'Field Validation Error',
+              message: `There's an issue with the ${fieldName} field: ${fieldMessage}`,
+              details: 'Please check your form data and ensure all fields contain valid information according to Salesforce requirements.'
+            });
+          }
+          
+          // Handle required field errors
+          if (errorData[0]?.errorCode === 'REQUIRED_FIELD_MISSING') {
+            const fieldName = errorData[0]?.fields?.[0] || 'field';
+            return res.status(400).json({
+              error: 'Required Field Missing',
+              message: `The ${fieldName} field is required but was not provided.`,
+              details: 'Please fill in all required fields and try again.'
+            });
+          }
+          
+          // Generic Salesforce error with specific message
+          return res.status(400).json({
+            error: 'Salesforce Validation Error',
+            message: errorData[0]?.message || 'Salesforce rejected the data due to validation rules.',
+            details: 'Please review your information and ensure it meets Salesforce requirements. Contact support if the issue persists.'
+          });
+          
+        } catch (parseError) {
+          // If we can't parse the error, fall back to generic message
+          return res.status(400).json({
+            error: 'Salesforce Error',
+            message: 'Salesforce rejected the data due to validation rules.',
+            details: error.message
+          });
+        }
+      }
+
       // Check for other common Salesforce errors
       if (error instanceof Error) {
         if (error.message.includes('INVALID_SESSION_ID')) {

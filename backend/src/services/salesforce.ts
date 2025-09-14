@@ -417,23 +417,43 @@ class SalesforceService {
       };
 
       console.log('Creating Contact with data:', contactData);
-      const contactResult = await this.makeAuthenticatedRequest(
-        `${instanceUrl}/services/data/v58.0/sobjects/Contact/`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(contactData),
+      let contactResult;
+      
+      try {
+        contactResult = await this.makeAuthenticatedRequest(
+          `${instanceUrl}/services/data/v58.0/sobjects/Contact/`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(contactData),
+          }
+        );
+      } catch (error: any) {
+        // Handle duplicate detection for Contact
+        if (error.message.includes('DUPLICATES_DETECTED')) {
+          console.log('Duplicate Contact detected, extracting existing Contact ID...');
+          const errorData = JSON.parse(error.message.replace('HTTP 400: ', ''));
+          const duplicateId = errorData[0]?.duplicateResult?.matchResults?.[0]?.matchRecords?.[0]?.record?.Id;
+          
+          if (duplicateId) {
+            console.log('Using existing Contact ID:', duplicateId);
+            contactResult = { id: duplicateId };
+          } else {
+            throw new Error('Failed to extract duplicate Contact ID');
+          }
+        } else {
+          throw error;
         }
-      );
+      }
 
       if (!contactResult.id) {
         throw new Error('Failed to create Contact - no ID returned');
       }
 
-      console.log('Contact created successfully:', contactResult.id);
+      console.log('Contact ID obtained:', contactResult.id);
 
       return {
         accountId: accountResult.id,
