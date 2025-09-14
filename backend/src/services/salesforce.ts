@@ -350,10 +350,10 @@ class SalesforceService {
     }
   }
 
-  async createAccountAndContactWithOAuth(userData: SalesforceUserData): Promise<{ accountId: string; contactId: string; salesforceUrl: string }> {
+  async createAccountAndContactWithOAuth(userData: SalesforceUserData, userId: string): Promise<{ accountId: string; contactId: string; salesforceUrl: string }> {
     try {
       // Use OAuth tokens instead of username/password authentication
-      const { accessToken, instanceUrl } = await SalesforceService.authenticateWithOAuth('default');
+      const { accessToken, instanceUrl } = await SalesforceService.authenticateWithOAuth(userId);
       
       console.log('Using OAuth authentication for Salesforce API calls');
       

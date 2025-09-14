@@ -114,7 +114,7 @@ router.post('/create-account-contact', jwtAuth, async (req: AuthenticatedRequest
     
     try {
       // Create Account and Contact in Salesforce using OAuth tokens
-      const result = await salesforceService.createAccountAndContactWithOAuth(userData);
+      const result = await salesforceService.createAccountAndContactWithOAuth(userData, user.id);
       
       console.log('Salesforce creation successful:', result);
 

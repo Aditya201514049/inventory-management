@@ -44,8 +44,8 @@ export const checkSalesforceAuthStatus = async (): Promise<{ authenticated: bool
   const response = await fetch(`${API_BASE_URL}/salesforce/auth-status`, {
     method: 'GET',
     headers: {
+      ...authService.getAuthHeaders(),
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`,
     },
   });
 
@@ -61,8 +61,8 @@ export const initiateSalesforceOAuth = async (): Promise<void> => {
   const response = await fetch(`${API_BASE_URL}/salesforce/auth`, {
     method: 'POST',
     headers: {
+      ...authService.getAuthHeaders(),
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`,
     },
   });
 
@@ -80,8 +80,8 @@ export const createSalesforceAccountContact = async (userData: SalesforceUserDat
   const response = await fetch(`${API_BASE_URL}/salesforce/create-account-contact`, {
     method: 'POST',
     headers: {
+      ...authService.getAuthHeaders(),
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`,
     },
     body: JSON.stringify(userData),
   });
