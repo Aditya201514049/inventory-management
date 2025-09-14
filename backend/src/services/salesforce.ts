@@ -104,6 +104,42 @@ class SalesforceService {
   private instanceUrl: string | null = null;
   private tokenExpiry: number = 0;
 
+  // Store OAuth tokens per user (in production, use proper session/database storage)
+  private static oauthTokens: Map<string, {
+    access_token?: string;
+    instance_url?: string;
+    refresh_token?: string;
+  }> = new Map();
+
+  static async authenticateWithOAuth(userId: string): Promise<{ accessToken: string; instanceUrl: string }> {
+    console.log('=== OAuth Token Check ===');
+    const userTokens = SalesforceService.oauthTokens.get(userId) || {};
+    console.log('Available tokens for user:', userId, {
+      hasAccessToken: !!userTokens.access_token,
+      hasInstanceUrl: !!userTokens.instance_url,
+      tokenKeys: Object.keys(userTokens)
+    });
+    
+    if (!userTokens.access_token || !userTokens.instance_url) {
+      console.error('OAuth tokens missing for user:', userId, {
+        access_token: userTokens.access_token ? 'present' : 'missing',
+        instance_url: userTokens.instance_url ? 'present' : 'missing'
+      });
+      throw new Error('No OAuth tokens available. Please authenticate first.');
+    }
+
+    console.log('OAuth tokens found, returning for API use');
+    return {
+      accessToken: userTokens.access_token,
+      instanceUrl: userTokens.instance_url
+    };
+  }
+
+  hasValidTokensForUser(userId: string): boolean {
+    const userTokens = SalesforceService.oauthTokens.get(userId) || {};
+    return !!(userTokens.access_token && userTokens.instance_url);
+  }
+
   private async authenticate(): Promise<void> {
     // Check if token is still valid (with 5 minute buffer)
     if (this.accessToken && Date.now() < this.tokenExpiry - 300000) {
@@ -301,6 +337,128 @@ class SalesforceService {
     }
   }
 
+  async createAccountAndContactWithOAuth(userData: SalesforceUserData): Promise<{ accountId: string; contactId: string; salesforceUrl: string }> {
+    try {
+      // Use OAuth tokens instead of username/password authentication
+      const { accessToken, instanceUrl } = await SalesforceService.authenticateWithOAuth('default');
+      
+      console.log('Using OAuth authentication for Salesforce API calls');
+      
+      // Create Account
+      const accountData = {
+        Name: userData.company || `${userData.firstName} ${userData.lastName}`,
+        BillingStreet: userData.address?.street,
+        BillingCity: userData.address?.city,
+        BillingState: userData.address?.state,
+        BillingPostalCode: userData.address?.postalCode,
+        BillingCountry: userData.address?.country,
+      };
+
+      console.log('Creating Account with data:', accountData);
+      const accountResult = await this.makeAuthenticatedRequest(
+        `${instanceUrl}/services/data/v58.0/sobjects/Account/`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(accountData),
+        }
+      );
+
+      if (!accountResult.id) {
+        throw new Error('Failed to create Account - no ID returned');
+      }
+
+      console.log('Account created successfully:', accountResult.id);
+
+      // Create Contact
+      const contactData = {
+        FirstName: userData.firstName,
+        LastName: userData.lastName,
+        Email: userData.email,
+        Phone: userData.phone,
+        Title: userData.jobTitle,
+        AccountId: accountResult.id,
+      };
+
+      console.log('Creating Contact with data:', contactData);
+      const contactResult = await this.makeAuthenticatedRequest(
+        `${instanceUrl}/services/data/v58.0/sobjects/Contact/`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(contactData),
+        }
+      );
+
+      if (!contactResult.id) {
+        throw new Error('Failed to create Contact - no ID returned');
+      }
+
+      console.log('Contact created successfully:', contactResult.id);
+
+      return {
+        accountId: accountResult.id,
+        contactId: contactResult.id,
+        salesforceUrl: `${instanceUrl}/${contactResult.id}`,
+      };
+    } catch (error) {
+      console.error('Error in createAccountAndContactWithOAuth:', error);
+      throw error;
+    }
+  }
+
+  private async makeAuthenticatedRequest(url: string, options: any): Promise<any> {
+    try {
+      return new Promise((resolve, reject) => {
+        const urlObj = new URL(url);
+        const isHttps = urlObj.protocol === 'https:';
+        const httpModule = isHttps ? require('https') : require('http');
+        
+        const requestOptions = {
+          hostname: urlObj.hostname,
+          port: urlObj.port || (isHttps ? 443 : 80),
+          path: urlObj.pathname + urlObj.search,
+          method: options.method || 'GET',
+          headers: options.headers || {},
+        };
+
+        const req = httpModule.request(requestOptions, (res: any) => {
+          let data = '';
+          res.on('data', (chunk: any) => data += chunk);
+          res.on('end', () => {
+            try {
+              if (res.statusCode >= 200 && res.statusCode < 300) {
+                const jsonData = JSON.parse(data);
+                resolve(jsonData);
+              } else {
+                reject(new Error(`HTTP ${res.statusCode}: ${data}`));
+              }
+            } catch (error) {
+              reject(new Error(`Failed to parse response: ${data}`));
+            }
+          });
+        });
+
+        req.on('error', (error: any) => reject(error));
+        
+        if (options.body) {
+          req.write(options.body);
+        }
+        
+        req.end();
+      });
+    } catch (error) {
+      console.error('Authenticated request failed:', error);
+      throw error;
+    }
+  }
+
   async testConnection(): Promise<boolean> {
     try {
       await this.authenticate();
@@ -311,6 +469,11 @@ class SalesforceService {
       console.error('Salesforce connection test failed:', error);
       return false;
     }
+  }
+
+  setOAuthTokens(userId: string, tokens: { access_token: string; instance_url: string; refresh_token?: string }) {
+    SalesforceService.oauthTokens.set(userId, tokens);
+    console.log('OAuth tokens stored successfully for user:', userId);
   }
 }
 

@@ -3,8 +3,6 @@ import { jwtAuth, AuthenticatedRequest } from '../middleware/jwtAuth';
 import salesforceService from '../services/salesforce';
 import { z } from 'zod';
 
-const router = Router();
-
 // Validation schema for Salesforce user data
 const salesforceUserSchema = z.object({
   firstName: z.string().min(1, 'First name is required'),
@@ -20,6 +18,30 @@ const salesforceUserSchema = z.object({
     postalCode: z.string().optional(),
     country: z.string().optional(),
   }).optional(),
+});
+
+const router = Router();
+
+// Add authentication status endpoint
+router.get('/auth-status', jwtAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const user = req.user;
+    const userId = user.id.toString();
+    
+    // Check if user has valid OAuth tokens
+    const hasTokens = salesforceService.hasValidTokensForUser(userId);
+    
+    res.json({ 
+      authenticated: hasTokens,
+      userId: userId
+    });
+  } catch (error: unknown) {
+    console.error('Auth status check error:', error);
+    res.status(500).json({ 
+      authenticated: false,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
 });
 
 // Test Salesforce connection
@@ -38,12 +60,12 @@ router.get('/test', jwtAuth, async (req: AuthenticatedRequest, res) => {
       connected: isConnected,
       message: isConnected ? 'Salesforce connection successful' : 'Salesforce connection failed'
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Salesforce connection test error:', error);
     res.status(500).json({ 
       connected: false,
       message: 'Connection test failed',
-      error: error.message 
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
@@ -80,30 +102,66 @@ router.post('/create-account-contact', jwtAuth, async (req: AuthenticatedRequest
 
     console.log('Starting Salesforce Account/Contact creation...');
     
-    // Create Account and Contact in Salesforce
-    const result = await salesforceService.createAccountAndContact(userData);
-    
-    console.log('Salesforce creation successful:', result);
+    try {
+      // Create Account and Contact in Salesforce using OAuth tokens
+      const result = await salesforceService.createAccountAndContactWithOAuth(userData);
+      
+      console.log('Salesforce creation successful:', result);
 
-    // Log the action for audit purposes
-    console.log(`User ${user.email} created Salesforce Account (${result.accountId}) and Contact (${result.contactId})`);
+      // Log the action for audit purposes
+      console.log(`User ${user.email} created Salesforce Account (${result.accountId}) and Contact (${result.contactId})`);
 
-    res.json({
-      success: true,
-      message: 'Successfully created Salesforce Account and Contact',
-      accountId: result.accountId,
-      contactId: result.contactId,
-      salesforceUrl: `https://login.salesforce.com/lightning/r/Contact/${result.contactId}/view`
-    });
+      res.json({
+        success: true,
+        message: 'Account and Contact created successfully in Salesforce',
+        data: result
+      });
+    } catch (error: unknown) {
+      console.error('=== Salesforce OAuth Creation Error ===');
+      console.error('Error type:', error instanceof Error ? error.constructor.name : 'Unknown error');
+      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('Error stack:', error instanceof Error ? error.stack : 'Unknown error');
+      console.error('Full error object:', error);
+      
+      // Check if it's an OAuth token issue
+      if (error instanceof Error && error.message.includes('No OAuth tokens available')) {
+        return res.status(401).json({ 
+          error: 'OAuth authentication required. Please authenticate with Salesforce first.',
+          requiresAuth: true
+        });
+      }
+      
+      // Check for other common Salesforce errors
+      if (error instanceof Error) {
+        if (error.message.includes('INVALID_SESSION_ID')) {
+          return res.status(401).json({ 
+            error: 'Salesforce session expired. Please re-authenticate.',
+            requiresAuth: true
+          });
+        }
+        
+        if (error.message.includes('INSUFFICIENT_ACCESS')) {
+          return res.status(403).json({ 
+            error: 'Insufficient permissions in Salesforce. Please check your user permissions.',
+          });
+        }
+      }
+      
+      res.status(500).json({ 
+        error: 'Failed to create Account and Contact in Salesforce',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('=== Salesforce Error Details ===');
-    console.error('Error type:', error.constructor.name);
-    console.error('Error message:', error.message);
-    console.error('Error stack:', error.stack);
+    console.error('Error type:', error instanceof Error ? error.constructor.name : 'Unknown error');
+    console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
+    console.error('Error stack:', error instanceof Error ? error.stack : 'Unknown error');
+    console.error('Full error object:', error);
     
     // Check for specific error types
-    if (error.message.includes('Missing Salesforce credentials')) {
+    if (error instanceof Error && error.message.includes('Missing Salesforce credentials')) {
       console.error('Environment variables check:');
       console.error('SALESFORCE_USERNAME:', process.env.SALESFORCE_USERNAME ? 'SET' : 'MISSING');
       console.error('SALESFORCE_PASSWORD:', process.env.SALESFORCE_PASSWORD ? 'SET' : 'MISSING');
@@ -114,21 +172,21 @@ router.post('/create-account-contact', jwtAuth, async (req: AuthenticatedRequest
     
     // Return user-friendly error messages
     let errorMessage = 'Failed to create Salesforce records';
-    if (error.message.includes('authentication')) {
+    if (error instanceof Error && error.message.includes('authentication')) {
       errorMessage = 'Salesforce authentication failed. Please check configuration.';
-    } else if (error.message.includes('DUPLICATE_VALUE')) {
+    } else if (error instanceof Error && error.message.includes('DUPLICATE_VALUE')) {
       errorMessage = 'A record with this email already exists in Salesforce.';
-    } else if (error.message.includes('REQUIRED_FIELD_MISSING')) {
+    } else if (error instanceof Error && error.message.includes('REQUIRED_FIELD_MISSING')) {
       errorMessage = 'Required fields are missing. Please fill in all required information.';
-    } else if (error.message.includes('Missing Salesforce credentials')) {
+    } else if (error instanceof Error && error.message.includes('Missing Salesforce credentials')) {
       errorMessage = 'Salesforce credentials are not properly configured.';
     }
 
     res.status(500).json({ 
       success: false,
       message: errorMessage,
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined,
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      error: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined,
+      details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.stack : 'Unknown error' : undefined
     });
   }
 });
@@ -145,11 +203,11 @@ router.get('/user-records', jwtAuth, async (req: AuthenticatedRequest, res) => {
       userEmail: user.email
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching Salesforce user records:', error);
     res.status(500).json({ 
       message: 'Failed to fetch Salesforce records',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      error: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined
     });
   }
 });
@@ -178,10 +236,21 @@ router.get('/auth', (req, res) => {
   res.redirect(authUrl);
 });
 
+// Salesforce OAuth token response interface
+interface SalesforceTokenResponse {
+  access_token: string;
+  instance_url: string;
+  id: string;
+  token_type: string;
+  issued_at: string;
+  signature: string;
+  refresh_token?: string;
+}
+
 // Handle Salesforce OAuth callback
 router.get('/callback', async (req, res) => {
   try {
-    const { code, error } = req.query;
+    const { code, error, state } = req.query;
     
     if (error) {
       console.error('Salesforce OAuth error:', error);
@@ -197,6 +266,10 @@ router.get('/callback', async (req, res) => {
         : (process.env.FRONTEND_URL || 'http://localhost:3000');
       return res.redirect(`${frontendUrl}/profile?salesforce_error=no_code`);
     }
+
+    // Extract user ID from state parameter
+    const userId = state as string || 'default';
+    console.log('Extracted user ID from state:', userId);
 
     const clientId = process.env.SALESFORCE_CONSUMER_KEY;
     const clientSecret = process.env.SALESFORCE_CONSUMER_SECRET;
@@ -230,10 +303,17 @@ router.get('/callback', async (req, res) => {
       return res.redirect(`${frontendUrl}/profile?salesforce_error=token_exchange_failed`);
     }
 
-    const tokenData = await tokenResponse.json();
+    const tokenData = await tokenResponse.json() as SalesforceTokenResponse;
     console.log('Salesforce OAuth successful:', { 
-      instance_url: (tokenData as any).instance_url,
-      token_type: (tokenData as any).token_type 
+      instance_url: tokenData.instance_url,
+      token_type: tokenData.token_type 
+    });
+
+    // Store tokens for later use with user identification
+    salesforceService.setOAuthTokens(userId, {
+      access_token: tokenData.access_token,
+      instance_url: tokenData.instance_url,
+      refresh_token: tokenData.refresh_token
     });
 
     // Store tokens in session or return to frontend
@@ -243,8 +323,9 @@ router.get('/callback', async (req, res) => {
       : (process.env.FRONTEND_URL || 'http://localhost:3000');
     res.redirect(`${frontendUrl}/profile?salesforce_success=true`);
     
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Salesforce callback error:', error);
+    console.error('Full error object:', error);
     const frontendUrl = process.env.NODE_ENV === 'production' 
       ? process.env.PRODUCTION_FRONTEND_URL 
       : (process.env.FRONTEND_URL || 'http://localhost:3000');

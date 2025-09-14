@@ -40,7 +40,23 @@ export const testSalesforceConnection = async (): Promise<{ connected: boolean; 
   return await response.json();
 };
 
-export const createSalesforceAccountContact = async (userData: SalesforceUserData): Promise<SalesforceResponse> => {
+export const checkSalesforceAuthStatus = async (): Promise<{ authenticated: boolean; userId?: string }> => {
+  const response = await fetch(`${API_BASE_URL}/salesforce/auth-status`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
+};
+
+export const createSalesforceAccountContact = async (userData: SalesforceUserData): Promise<any> => {
   const response = await fetch(`${API_BASE_URL}/salesforce/create-account-contact`, {
     method: 'POST',
     headers: {
