@@ -75,6 +75,14 @@ export const authService = {
     window.history.replaceState({}, document.title, window.location.pathname)
     // Reload the app so AuthProvider runs checkAuth
     window.location.reload()
+  },
+
+  // Get auth headers
+  getAuthHeaders: (): Record<string, string> => {
+    const token = localStorage.getItem('jwt_token');
+    return {
+      'Authorization': token ? `Bearer ${token}` : '',
+      'Content-Type': 'application/json',
+    };
   }
-  
 }

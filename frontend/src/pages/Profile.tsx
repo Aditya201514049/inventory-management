@@ -5,19 +5,21 @@ import { getUsers } from '../services/admin';
 import { getUserInventories } from '../services/inventory';
 import { getUserStats } from '../services/profile';
 import { useNavigate } from 'react-router-dom';
+import SalesforceIntegration from '../components/SalesforceIntegration';
 import { 
   User, 
   Mail, 
   Calendar, 
   Shield, 
   Package,
-  BarChart3
+  BarChart3,
+  Building2
 } from 'lucide-react';
 
 
 const ProfilePage = () => {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'overview' | 'inventories'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'inventories' | 'salesforce'>('overview');
   const navigate = useNavigate();
 
   // Get user's detailed stats using dedicated profile endpoint
@@ -131,6 +133,17 @@ const ProfilePage = () => {
           >
             My Inventories
           </button>
+          <button
+            onClick={() => setActiveTab('salesforce')}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center ${
+              activeTab === 'salesforce'
+                ? 'bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+            }`}
+          >
+            <Building2 className="h-4 w-4 mr-1" />
+            Salesforce CRM
+          </button>
         </div>
       </div>
 
@@ -215,6 +228,9 @@ const ProfilePage = () => {
         </div>
       )}
 
+      {activeTab === 'salesforce' && (
+        <SalesforceIntegration />
+      )}
 
       {/* Account Settings */}
       <div className="mt-8 bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700">

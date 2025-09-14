@@ -12,6 +12,7 @@ import userRouter from './routes/user';
 import fieldRouter from './routes/field';
 import profileRouter from './routes/profile';
 import tagsRouter from './routes/tags';
+import salesforceRouter from './routes/salesforce';
 
 const app = express();
 
@@ -73,6 +74,7 @@ app.use('/api/users', userRouter);
 app.use('/api/fields', fieldRouter);
 app.use('/api/profile', profileRouter);
 app.use('/api', tagsRouter);
+app.use('/api/salesforce', salesforceRouter);
 
 // Root route - shows backend is running
 app.get('/', (req, res) => {
