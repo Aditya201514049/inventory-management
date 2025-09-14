@@ -368,23 +368,43 @@ class SalesforceService {
       };
 
       console.log('Creating Account with data:', accountData);
-      const accountResult = await this.makeAuthenticatedRequest(
-        `${instanceUrl}/services/data/v58.0/sobjects/Account/`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(accountData),
+      let accountResult;
+      
+      try {
+        accountResult = await this.makeAuthenticatedRequest(
+          `${instanceUrl}/services/data/v58.0/sobjects/Account/`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(accountData),
+          }
+        );
+      } catch (error: any) {
+        // Handle duplicate detection
+        if (error.message.includes('DUPLICATES_DETECTED')) {
+          console.log('Duplicate Account detected, extracting existing Account ID...');
+          const errorData = JSON.parse(error.message.replace('HTTP 400: ', ''));
+          const duplicateId = errorData[0]?.duplicateResult?.matchResults?.[0]?.matchRecords?.[0]?.record?.Id;
+          
+          if (duplicateId) {
+            console.log('Using existing Account ID:', duplicateId);
+            accountResult = { id: duplicateId };
+          } else {
+            throw new Error('Failed to extract duplicate Account ID');
+          }
+        } else {
+          throw error;
         }
-      );
+      }
 
       if (!accountResult.id) {
         throw new Error('Failed to create Account - no ID returned');
       }
 
-      console.log('Account created successfully:', accountResult.id);
+      console.log('Account ID obtained:', accountResult.id);
 
       // Create Contact
       const contactData = {

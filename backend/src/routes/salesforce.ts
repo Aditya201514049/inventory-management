@@ -124,7 +124,9 @@ router.post('/create-account-contact', jwtAuth, async (req: AuthenticatedRequest
       res.json({
         success: true,
         message: 'Account and Contact created successfully in Salesforce',
-        data: result
+        accountId: result.accountId,
+        contactId: result.contactId,
+        salesforceUrl: result.salesforceUrl
       });
     } catch (error: unknown) {
       console.error('=== Salesforce OAuth Creation Error ===');
