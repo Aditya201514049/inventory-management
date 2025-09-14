@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { createSalesforceAccountContact, SalesforceUserData, checkSalesforceAuthStatus } from '../services/salesforce';
+import { 
+  checkSalesforceAuthStatus, 
+  createSalesforceAccountContact,
+  initiateSalesforceOAuth,
+  type SalesforceUserData 
+} from '../services/salesforce';
 import { Building2, User, Phone, MapPin, Briefcase, ExternalLink, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 interface SalesforceIntegrationProps {
@@ -45,7 +50,9 @@ const SalesforceIntegration: React.FC<SalesforceIntegrationProps> = ({ onClose }
   const checkAuthStatus = async () => {
     try {
       setCheckingAuth(true);
+      console.log('Checking Salesforce auth status...');
       const status = await checkSalesforceAuthStatus();
+      console.log('Auth status response:', status);
       setIsAuthenticated(status.authenticated);
     } catch (error) {
       console.error('Failed to check auth status:', error);
@@ -166,7 +173,7 @@ const SalesforceIntegration: React.FC<SalesforceIntegrationProps> = ({ onClose }
             Please authenticate with Salesforce to continue.
           </p>
           <button
-            onClick={() => window.open('http://localhost:4000/api/salesforce/auth', '_blank')}
+            onClick={() => initiateSalesforceOAuth()}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 mb-4"
           >
             Authenticate with Salesforce

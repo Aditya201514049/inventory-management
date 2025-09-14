@@ -45,7 +45,7 @@ export const checkSalesforceAuthStatus = async (): Promise<{ authenticated: bool
     method: 'GET',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+      'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`,
     },
   });
 
@@ -56,12 +56,32 @@ export const checkSalesforceAuthStatus = async (): Promise<{ authenticated: bool
   return response.json();
 };
 
+export const initiateSalesforceOAuth = async (): Promise<void> => {
+  // Make a POST request to get the OAuth URL, then redirect
+  const response = await fetch(`${API_BASE_URL}/salesforce/auth`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  // Redirect to the OAuth URL returned by the backend
+  window.location.href = data.authUrl;
+};
+
 export const createSalesforceAccountContact = async (userData: SalesforceUserData): Promise<any> => {
   const response = await fetch(`${API_BASE_URL}/salesforce/create-account-contact`, {
     method: 'POST',
     headers: {
-      ...authService.getAuthHeaders(),
       'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('jwt_token')}`,
     },
     body: JSON.stringify(userData),
   });

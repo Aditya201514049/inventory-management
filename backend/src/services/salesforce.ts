@@ -136,8 +136,21 @@ class SalesforceService {
   }
 
   hasValidTokensForUser(userId: string): boolean {
+    console.log('=== Token Validation Check ===');
+    console.log('Checking tokens for user ID:', userId);
+    console.log('All stored tokens:', Array.from(SalesforceService.oauthTokens.keys()));
+    
     const userTokens = SalesforceService.oauthTokens.get(userId) || {};
-    return !!(userTokens.access_token && userTokens.instance_url);
+    console.log('User tokens found:', {
+      hasAccessToken: !!userTokens.access_token,
+      hasInstanceUrl: !!userTokens.instance_url,
+      tokenKeys: Object.keys(userTokens)
+    });
+    
+    const isValid = !!(userTokens.access_token && userTokens.instance_url);
+    console.log('Tokens valid:', isValid);
+    
+    return isValid;
   }
 
   private async authenticate(): Promise<void> {

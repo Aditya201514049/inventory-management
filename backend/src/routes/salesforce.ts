@@ -22,14 +22,24 @@ const salesforceUserSchema = z.object({
 
 const router = Router();
 
+// Test route to verify Salesforce routes are working
+router.get('/test-route', (req, res) => {
+  console.log('=== SALESFORCE TEST ROUTE HIT ===');
+  res.json({ message: 'Salesforce routes are working', timestamp: new Date().toISOString() });
+});
+
 // Add authentication status endpoint
 router.get('/auth-status', jwtAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const user = req.user;
     const userId = user.id.toString();
     
+    console.log('=== Auth Status Check ===');
+    console.log('User ID:', userId);
+    
     // Check if user has valid OAuth tokens
     const hasTokens = salesforceService.hasValidTokensForUser(userId);
+    console.log('Has valid tokens:', hasTokens);
     
     res.json({ 
       authenticated: hasTokens,
@@ -213,27 +223,44 @@ router.get('/user-records', jwtAuth, async (req: AuthenticatedRequest, res) => {
 });
 
 // Initiate Salesforce OAuth flow
-router.get('/auth', (req, res) => {
-  const clientId = process.env.SALESFORCE_CONSUMER_KEY;
-  const baseUrl = process.env.NODE_ENV === 'production' 
-    ? process.env.PRODUCTION_URL 
-    : (process.env.BACKEND_URL || 'http://localhost:4000');
-  const redirectUri = `${baseUrl}/api/salesforce/callback`;
-  const loginUrl = process.env.SALESFORCE_LOGIN_URL || 'https://login.salesforce.com';
-  
-  if (!clientId) {
-    return res.status(500).json({ error: 'Salesforce Consumer Key not configured' });
+router.post('/auth', jwtAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const user = req.user;
+    const userId = user.id.toString();
+    
+    console.log('=== OAuth Auth Route Debug ===');
+    console.log('User ID:', userId);
+    console.log('User email:', user.email);
+    
+    const clientId = process.env.SALESFORCE_CONSUMER_KEY;
+    const baseUrl = process.env.NODE_ENV === 'production' 
+      ? process.env.PRODUCTION_URL 
+      : (process.env.BACKEND_URL || 'http://localhost:4000');
+    const redirectUri = `${baseUrl}/api/salesforce/callback`;
+    const loginUrl = process.env.SALESFORCE_LOGIN_URL || 'https://login.salesforce.com';
+    const state = userId.toString();
+    
+    if (!clientId) {
+      return res.status(500).json({ error: 'Salesforce Consumer Key not configured' });
+    }
+
+    const authUrl = `${loginUrl}/services/oauth2/authorize?` +
+      `response_type=code&` +
+      `client_id=${encodeURIComponent(clientId)}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `state=${encodeURIComponent(state)}&` +
+      `scope=api%20refresh_token`;
+
+    console.log('Generated OAuth URL:', authUrl);
+    console.log('Using callback URL:', redirectUri);
+    console.log('User ID in state:', userId);
+    
+    // Return the OAuth URL instead of redirecting
+    res.json({ authUrl });
+  } catch (error) {
+    console.error('OAuth initiation error:', error);
+    res.status(500).json({ error: 'Authentication failed' });
   }
-
-  const authUrl = `${loginUrl}/services/oauth2/authorize?` +
-    `response_type=code&` +
-    `client_id=${encodeURIComponent(clientId)}&` +
-    `redirect_uri=${encodeURIComponent(redirectUri)}&` +
-    `scope=api%20refresh_token`;
-
-  console.log('Redirecting to Salesforce OAuth:', authUrl);
-  console.log('Using callback URL:', redirectUri);
-  res.redirect(authUrl);
 });
 
 // Salesforce OAuth token response interface
