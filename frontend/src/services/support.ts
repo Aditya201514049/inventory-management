@@ -22,7 +22,7 @@ class SupportService {
 
   async createSupportTicket(ticketData: SupportTicketData): Promise<SupportTicketResponse> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/support/ticket`, {
+      const response = await fetch(`${this.baseUrl}/support/ticket`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -46,7 +46,7 @@ class SupportService {
 
   async getSupportTickets(): Promise<any[]> {
     try {
-      const response = await fetch(`${this.baseUrl}/api/support/tickets`, {
+      const response = await fetch(`${this.baseUrl}/support/tickets`, {
         method: 'GET',
         headers: {
           ...authService.getAuthHeaders()
