@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { HelpCircle, Send, X, Upload, CheckCircle, AlertCircle } from 'lucide-react'
+import { HelpCircle, Send, X, Upload, CheckCircle, AlertCircle, ExternalLink } from 'lucide-react'
 import { supportService } from '../services/support'
 
 interface SupportTicketProps {
@@ -13,6 +13,7 @@ const SupportTicket: React.FC<SupportTicketProps> = ({ isOpen, onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [ticketResult, setTicketResult] = useState<{ ticketId: string; uploadUrl?: string } | null>(null)
   const [formData, setFormData] = useState({
     subject: '',
     description: '',
@@ -33,16 +34,17 @@ const SupportTicket: React.FC<SupportTicketProps> = ({ isOpen, onClose }) => {
     setErrorMessage('')
 
     try {
-      await supportService.createSupportTicket({
+      const result = await supportService.createSupportTicket({
         ...formData,
         userEmail: user?.email || '',
         userName: user?.name || '',
         userId: user?.id || ''
       })
       
+      setTicketResult(result)
       setSubmitStatus('success')
       
-      // Reset form after successful submission
+      // Reset form after successful submission (extended timeout to show the link)
       setTimeout(() => {
         setFormData({
           subject: '',
@@ -51,8 +53,9 @@ const SupportTicket: React.FC<SupportTicketProps> = ({ isOpen, onClose }) => {
           category: 'general'
         })
         setSubmitStatus('idle')
+        setTicketResult(null)
         onClose()
-      }, 2000)
+      }, 5000)
       
     } catch (error) {
       console.error('Error creating support ticket:', error)
@@ -170,11 +173,45 @@ const SupportTicket: React.FC<SupportTicketProps> = ({ isOpen, onClose }) => {
 
           {/* Success Message */}
           {submitStatus === 'success' && (
-            <div className="flex items-center p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
-              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
-              <p className="text-sm text-green-600 dark:text-green-400">
-                Support ticket created successfully! You'll receive an email confirmation shortly.
-              </p>
+            <div className="space-y-3">
+              <div className="flex items-center p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-md">
+                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400 mr-2" />
+                <div className="flex-1">
+                  <p className="text-sm text-green-600 dark:text-green-400">
+                    Support ticket created successfully!
+                  </p>
+                  {ticketResult && (
+                    <p className="text-xs text-green-500 dark:text-green-300 mt-1">
+                      Ticket ID: {ticketResult.ticketId}
+                    </p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Dropbox Upload Success */}
+              {ticketResult?.uploadUrl && (
+                <div className="flex items-start p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+                  <Upload className="h-5 w-5 text-blue-600 dark:text-blue-400 mr-2 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                      Ticket uploaded to Dropbox successfully!
+                    </p>
+                    <p className="text-xs text-blue-500 dark:text-blue-300 mt-1">
+                      Your support ticket has been saved to cloud storage for processing.
+                    </p>
+                    <a
+                      href={ticketResult.uploadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center mt-2 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 underline"
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      View ticket file in Dropbox
+                    </a>
+                  </div>
+                </div>
+              )}
+              
             </div>
           )}
 
